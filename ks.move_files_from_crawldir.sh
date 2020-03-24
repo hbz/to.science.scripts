@@ -12,7 +12,7 @@ echo "*************************************************************"
 jobDir=/opt/regal/wpull-data-crawldir
 outDir=/opt/regal/wpull-data
 cd $jobDir
-for crawldir in "edoweb:*/20*/"; do
+for crawldir in edoweb:*/20*/; do
   if [ ! -e "$crawldir" ]; then
     echo "Leeres Crawldir, nichts zu tun."
     echo
