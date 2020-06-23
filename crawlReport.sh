@@ -382,8 +382,9 @@ echo "Aktuelle Speicherplatzbelegung (Summen) durch Website-Crawls: $baseUrl/`ba
 echo "Aktuelle Status und Kennzahlen der einzelnen Crawl-Aufträge : $baseUrl/`basename $crawlReport`" >> $mailbodydatei
 
 subject="edoweb Website Crawl Reports"
+xheader="X-Edoweb: $(hostname) crawl reports"
 recipients=$EMAIL_RECIPIENT_PROJECT_ADMIN
-mailx -s "$subject" $recipients < $mailbodydatei
+mailx -s "$subject" -a "$xheader" $recipients < $mailbodydatei
 # rm $mailbodydatei
 
 exit 0
