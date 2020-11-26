@@ -1,4 +1,5 @@
 #!/bin/bash
+# Autor: I. Kuss, hbz
 echo "POST Forschungsdaten Ressource (Datei) nach Forschungsdaten-Hauptobjekt"
 . variables.conf
 # Vorgeschlagene Werte
