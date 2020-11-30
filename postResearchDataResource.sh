@@ -1,26 +1,23 @@
 #!/bin/bash
 # Autor: I. Kuss, hbz
-echo "POST Forschungsdaten Ressource (Datei) nach Forschungsdaten-Hauptobjekt"
+echo "POST Forschungsdaten Ressource nach Forschungsdaten-Hauptobjekt"
 . variables.conf
 # Vorgeschlagene Werte
-pid_vorschlag=6402617
+pid_vorschlag=6402622
 resourcePid_vorschlag=""
-dataBasedir_vorschlag=${RDM_RESOURCES:=/opt/ellinet_repo/resources}
 NAMESPACE=${NAMESPACE:=$INDEXNAME}
-dateiname_vorschlag="Figures.tar.gz"
+dateiname_vorschlag="20201101.csv"
 
 # Benutzereingaben
 read -p "PID Forschungsdaten (übergeordnetes Objekt)              : ($pid_vorschlag) " pid
 read -p "PID Ressource (Datei) (leer = wird automatisch vergeben) : ($resourcePid_vorschlag) " resourcePid
-read -p "Hauptverzeichnis für RDM-Ressourcen (ein absoluter Pfad) : ($dataBasedir_vorschlag) " dataBasedir
 pid=${pid:=$pid_vorschlag}
-dataDir_vorschlag="$NAMESPACE:$pid"
-read -p "Unterverzeichnis (relative Pfadangabe unter Hauptverz.)  : ($dataDir_vorschlag) " dataDir
+dataDir_vorschlag=""
+read -p "URL-Unterverzeichnis (relative Pfadangabe unterhalb von $NAMESPACE:$pid) : ($dataDir_vorschlag) " dataDir
 read -p "Dateiname (ohne Pfadangaben, mit Dateiendung)            : ($dateiname_vorschlag) " dateiname
 
 # Eingabewert oder (wenn leer) Standards verwenden
 resourcePid=${resourcePid:=$resourcePid_vorschlag}
-dataBasedir=${dataBasedir:=$dataBasedir_vorschlag}
 dataDir=${dataDir:=$dataDir_vorschlag}
 dateiname=${dateiname:=$dateiname_vorschlag}
 
@@ -28,8 +25,7 @@ dateiname=${dateiname:=$dateiname_vorschlag}
 echo "*** Verwendete Werte :"
 echo "PID Forschungsdaten = $pid"
 echo "PID Ressource       = $resourcePid"
-echo "Hauptverzeichnis    = $dataBasedir"
 echo "Unterverzeichnis    = $dataDir"
 echo "Dateiname           = $dateiname"
 
-curl -XPOST -u$REGAL_ADMIN:$REGAL_PASSWORD "$BACKEND/resource/$NAMESPACE:$pid/postResearchDataResource?resourcePid=$resourcePid&dataDir=$dataBasedir/$dataDir&filename=$dateiname" -H "UserId=resourceposter" -H "Content-Type: text/plain; charset=utf-8";
+curl -XPOST -u$REGAL_ADMIN:$REGAL_PASSWORD "$BACKEND/resource/$NAMESPACE:$pid/postResearchData?collectionUrl=data&subPath=$dataDir&filename=$dateiname&resourcePid=$resourcePid" -H "UserId=resourceposter" -H "Content-Type: text/plain; charset=utf-8";
