@@ -1,18 +1,19 @@
 #!/bin/bash
 # Autor: I. Kuss, hbz
 echo "POST Forschungsdaten Ressource nach Forschungsdaten-Hauptobjekt"
+echo "  falls ein URL-Unterverzeichnis angegeben wird, wird eine Überordnung unterhalb des Forschungsdatenobjektes angelegt."
 . variables.conf
 # Vorgeschlagene Werte
-pid_vorschlag=6402622
+pid_vorschlag=6402641
 resourcePid_vorschlag=""
 NAMESPACE=${NAMESPACE:=$INDEXNAME}
-dateiname_vorschlag="20201101.csv"
+dateiname_vorschlag="Wetterdaten2020.tar.xz"
 
 # Benutzereingaben
 read -p "PID Forschungsdaten (übergeordnetes Objekt)              : ($pid_vorschlag) " pid
 read -p "PID Ressource (Datei) (leer = wird automatisch vergeben) : ($resourcePid_vorschlag) " resourcePid
 pid=${pid:=$pid_vorschlag}
-dataDir_vorschlag=""
+dataDir_vorschlag="subPath"
 read -p "URL-Unterverzeichnis (relative Pfadangabe unterhalb von $NAMESPACE:$pid) : ($dataDir_vorschlag) " dataDir
 read -p "Dateiname (ohne Pfadangaben, mit Dateiendung)            : ($dateiname_vorschlag) " dateiname
 
