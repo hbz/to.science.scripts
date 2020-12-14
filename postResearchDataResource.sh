@@ -1,10 +1,11 @@
 #!/bin/bash
 # Autor: I. Kuss, hbz
 echo "POST Forschungsdaten Ressource nach Forschungsdaten-Hauptobjekt"
-echo "  falls ein URL-Unterverzeichnis angegeben wird, wird eine Überordnung unterhalb des Forschungsdatenobjektes angelegt."
+echo "  falls ein URL-Unterverzeichnis angegeben wird, wird eine Überordnung unterhalb des Forschungsdatenobjektes angelegt,"
+echo "    soweit diese noch nicht existiert."
 . variables.conf
 # Vorgeschlagene Werte
-pid_vorschlag=6402641
+pid_vorschlag=6402648
 resourcePid_vorschlag=""
 NAMESPACE=${NAMESPACE:=$INDEXNAME}
 dateiname_vorschlag="Wetterdaten2020.tar.xz"
