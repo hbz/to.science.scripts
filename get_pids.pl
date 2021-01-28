@@ -35,7 +35,10 @@ my $zeitstempel = sprintf ("%04d%02d%02d%02d%02d%02d", $year+1900,$mon+1,$mday,$
 # Auswertung Kommandozeilen-Optionen
 # **********************************
 my %opts=();
-getopts('m:n:o:sS', \%opts) or usage("ungültige Optionen");
+getopts('hm:n:o:sS', \%opts) or usage("ungültige Optionen");
+if ( defined($opts{h}) ) {
+  usage("Hilfeseite");
+  }
 if( !defined($opts{s}) && !defined($opts{S}) ) {
   my $logdatei = $script;
   $logdatei =~ s/\.pl$/.log/;
@@ -178,6 +181,7 @@ sub usage {
 
   Aufruf  :   $script
   Optionen:
+       -h :   Zeige Hilfe (diese Informationen)
        -m :   maximale Anzahl Objekte, die diese PID-Liste haben soll
        -n :   Namensraum; das Prefix im Objekt-Identifier
        -o :   Output-Datei (die PID-Liste)
