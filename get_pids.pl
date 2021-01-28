@@ -2,10 +2,12 @@
 # Erzeugt PID-Liste auf Basis von Anfragen an Fedora REST-API (nicht an Elasticsearch)
 # Autor: I. Kuss, hbz, 27.01.2021
 # Beispielaufruf: perl get_pids.pl -s -m 100000 -n edoweb
+# Output nach $REGAL_LOGS/get_pids.txt
 
 use strict;
 use warnings;
 use File::Basename;
+use File::Copy;
 use Getopt::Std;
 # https://metacpan.org/pod/WWW::Curl
 use WWW::Curl;
@@ -18,13 +20,16 @@ my $script = basename( $0 );
 my $log = *STDOUT;
 my $script_ohne_endung = $script;
 $script_ohne_endung =~ s/\.pl$//;
-my $pidfile = $script_ohne_endung . ".txt";
 my $REGAL_TMP = "/opt/regal/regal-tmp";
-my $maxResults = 200000; # Max. Anzahl Fedora-Objekte, die dieses Skript liest
 my $outfile; # Dateiname(n); Hier werden die einzelnen Tranchen der Fedora-Response abgelegt
+my $REGAL_LOGS = "/opt/regal/logs";
+my $pidfile = $REGAL_LOGS . "/" . $script_ohne_endung . ".txt"; # PID-Liste
+my $maxResults = 200000; # Max. Anzahl Fedora-Objekte, die dieses Skript liest
 my $resumptionToken; # Wiederaufnahme-Token zur Iteration der mehrfachen Curl-Aufrufe an die Fedora REST-API
 my $curl = ""; # Curl-Objekt für Perl
 my $namensraum = "";
+my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst)=localtime(time);
+my $zeitstempel = sprintf ("%04d%02d%02d%02d%02d%02d", $year+1900,$mon+1,$mday,$hour,$min,$sec);
 
 # **********************************
 # Auswertung Kommandozeilen-Optionen
@@ -104,15 +109,10 @@ sub create_curl_object {
 # ****************************
 # Ausgabedatei löschen, falls schon exsitent
 if( -e $pidfile ) {
-  printf "WARN: PID-Liste $pidfile existiert schon !\n";
-  print "Löschen (J/N) ? ";
-  my $antwort = <STDIN>; chomp $antwort;
-  printf "Antwort: $antwort\n";
-  if( $antwort ne "J" ) {
-    printf "INFO: Liste wird nicht gelöscht. Programmende.\n";
-    exit 0;
-  }
-  unlink $pidfile;
+  printf $log "INFO: PID-Liste $pidfile existiert schon.\n";
+  my $oldpidfile = $pidfile.".".$zeitstempel;
+  printf $log "INFO: Bestehende PID-Liste wird umbenannt nach $oldpidfile.\n";
+  move( $pidfile, $oldpidfile ) or die "Kann PID-Liste $pidfile nicht umbenennen nach $oldpidfile ($!)!";
 }
 
 # Öffnen der Perl-Schnittstelle zu Curl (Instanz erzeugen)
