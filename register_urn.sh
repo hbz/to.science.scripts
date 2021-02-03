@@ -25,7 +25,8 @@
 # Ingolf Kuss         | 19.07.2016 | Neuer Modus "katalog"
 # Ingolf Kuss         | 12.01.2018 | Auslagerung von Systemvariablen, Umbenennung nach register_urn.sh
 # Ingolf Kuss         | 19.12.2019 | Verschiebung vom Verzeichnis cronjobs/ nach regal-scripts/
-# Ingolf Kuss         | 16.06.2020 | Nachregistrierung der Objekte seit 19.12.
+# Ingolf Kuss         | 16.06.2020 | Nachregistrierung der Objekte seit 19.12.2019
+# Ingolf Kuss         | 03.02.2021 | Nachregistrierung der Objekte vom 15.12.2020 - 07.01.2021
 # --------------------+------------+--------------------------------------------------------------
 
 # Der Pfad, in dem dieses Skript steht
@@ -80,6 +81,14 @@ function stripOffQuotes {
 # Die erste Normalverarbeitung ist der Zeitraum 23.06.-10.07. und dieser wird am 13.07. verarbeitet.
 # Rechenregel: Startdatum = 12.12.2019 + (Tage seit 15.06.)*7
 # <<< ENDE Änderung KS20200616
+# >>> Kommentar KS20210203
+# Die Nachregistrierung lief vom 19.12.20 - 26.01.2021 nicht. Absichtliche Aussetzung wg. EDOZWO-1044 u. EDOZWO-1033.
+# Die Objekte mit Anlagedatum 15.12.20 - 06.01.21 müssen nachregistriert werden.
+# Am 04.02. wird erstmals ein 14-Tages-Zeitraum nachregistriert, nämlich der vom 15.12.-28.12.20.
+# Dann verschiebt sich jeden Tag das Startdatum um 7 Tage nach vorne.
+# Am 07.02. wird der Zeitraum vom 05.01.-18.01. nachregistriert.
+# Am 08.02. erfolgt erstmals wieder eine Normalverarbeitung, nämlich der Zeitraum 19.1.-05.02.21.
+# >>> ENDE Kommentar KS20210203
 # Ergebnisliste in eine Datei schreiben; auch eine E-Mail verschicken.
 outdatei=$REGAL_TMP/${modus}_urn.$$.out.txt
 if [ -f $outdatei ]; then
@@ -105,19 +114,28 @@ echo "home-Verzeichnis: $home_dir" >> $mailbodydatei
 echo "Projekt: $project" >> $mailbodydatei
 echo "Server: $server" >> $mailbodydatei
 typeset -i sekundenseit1970
-typeset -i sekundenseit1970_am_202007130000
-typeset -i sekundenseit1970_am_20191212
+# typeset -i sekundenseit1970_am_202007130000
+typeset -i sekundenseit1970_am_202102080000
+# typeset -i sekundenseit1970_am_20191212
+typeset -i sekundenseit1970_am_20201208
 typeset -i vonsekunden
 typeset -i bissekunden
 sekundenseit1970=`date +"%s"`
 
-sekundenseit1970_am_202007130000=`date -d"2020-07-13 00:00:00" +"%s"`
-if [ $sekundenseit1970 -lt $sekundenseit1970_am_202007130000 ]; then
-  # Nachregistrierung der Objekte vom 19.12.2019 bis 01.07.2020
-  sekundenseit1970_am_20191212=`date -d"2019-12-12 00:01:00" +"%s"`
-  tage_seit_20200615=$(( (`date +"%s"` - `date -d"2020-06-15 00:01:00" +"%s"`) / 86400 ))
-  vonsekunden=$(( $sekundenseit1970_am_20191212 + ($tage_seit_20200615*7)*86400 ))
+sekundenseit1970_am_202102080000=`date -d"2021-02-08 00:00:00" +"%s"`
+if [ $sekundenseit1970 -lt $sekundenseit1970_am_202102080000 ]; then
+  # Nachregistrierung der Objekte vom 15.12.2020 bis 06.01.2021
+  sekundenseit1970_am_20201208=`date -d"2020-12-08 00:01:00" +"%s"`
+  tage_seit_20210203=$(( (`date +"%s"` - `date -d"2021-02-03 00:01:00" +"%s"`) / 86400 ))
+  vonsekunden=$(( $sekundenseit1970_am_20201208 + ($tage_seit_20210203 * 7)*86400 ))
   bissekunden=$(( $vonsekunden + 14*86400 ))
+# sekundenseit1970_am_202007130000=`date -d"2020-07-13 00:00:00" +"%s"`
+# if [ $sekundenseit1970 -lt $sekundenseit1970_am_202007130000 ]; then
+#   # Nachregistrierung der Objekte vom 19.12.2019 bis 01.07.2020
+#   sekundenseit1970_am_20191212=`date -d"2019-12-12 00:01:00" +"%s"`
+#   tage_seit_20200615=$(( (`date +"%s"` - `date -d"2020-06-15 00:01:00" +"%s"`) / 86400 ))
+#   vonsekunden=$(( $sekundenseit1970_am_20191212 + ($tage_seit_20200615*7)*86400 ))
+#   bissekunden=$(( $vonsekunden + 14*86400 ))
 else
   # Normalbetrieb: Nachregistrierung von Objekten, die vor sieben Tagen bis vor 21 Tagen angelegt wurden.
   vonsekunden=$sekundenseit1970-1814400; # - 3 Wochen
@@ -221,7 +239,8 @@ do
       # minimalen Update auf das Objekt machen, z.B. über erneutes Setzen der Zugriffrechte
       # dadurch wird das Objekt dann an der Katalogschnittstelle gemeldet
       update=`curl -s -H "Content-Type: application/json" -XPATCH -u$REGAL_ADMIN:$passwd -d'{"publishScheme":"public"}' "$regalApi/resource/$id"`
-      echo "$aktdate: $update\n"; # Ausgabe in log-Datei
+      aktdatetime=`date +"%d.%m.%Y %H:%M:%S"`
+      echo "$aktdatetime: $update\n"; # Ausgabe in log-Datei
       updateResponse=${update:0:80}
       echo -e "$url\t$cdate\t$cat\t$contentType\t\t$updateResponse" >> $outdatei
     fi
@@ -249,7 +268,8 @@ if [ -s $outdatei ]; then
   if [ "$modus" = "control" ]; then
     recipients=$EMAIL_RECIPIENT_PROJECT_ADMIN;
   else
-    recipients=$EMAIL_RECIPIENT_ADMIN_USERS;
+    # recipients=$EMAIL_RECIPIENT_ADMIN_USERS; # nie an LBZ verschicken
+    recipients=$EMAIL_RECIPIENT_PROJECT_ADMIN;
   fi
   subject=" ";
   if [ "$modus" = "control" ]; then
