@@ -55,19 +55,20 @@ for pid in `ls -d edoweb:*`; do
   # Falls ja, ermittle Aleph-ID zu der PID.
   hbzid="keine"
   status_code="unknown"
-  status_code_line=`curl -Is -u $REGAL_ADMIN:$REGAL_PASSWORD "$BACKEND/resource/$pid.json" | head -1`
-  # echo $status_code_line
-  if [[ "$status_code_line" =~ ^HTTP(.*)\ ([0-9]{1,3})\ (.*)$ ]]; 
-  then 
-    status_code=${BASH_REMATCH[2]}
-  else
-    echo "Statuscode-Zeile ist nicht im erwarteten Format. Continuing anyway."
-  fi
+  IFS=$'\n'
+  for httpResponse in `curl -is -u $REGAL_ADMIN:$REGAL_PASSWORD "$BACKEND/resource/$pid.json"`; do
+    # echo $httpResponse
+    if [[ "$httpResponse" =~ ^HTTP(.*)\ ([0-9]{1,3})\ (.*)$ ]]; then
+      status_code=${BASH_REMATCH[2]}
+    fi
+  done
+  echo "statusCode: $status_code"
+  # echo "httpResonse is now: $httpResponse"
   if [ $status_code == 404 ]; then
     echo "pid $pid existiert nicht."
   else
     # Alles OK mit der PID. Ermittle Aleph-ID zu der PID.
-    hbzid=`curl -s "$BACKEND/resource/$pid.json" | jq '.hbzId[0]'`
+    hbzid=`echo $httpResponse | jq '.hbzId[0]'`
     if [ $hbzid ] && [ "$hbzid" != "null" ]; then
       hbzid=$(stripOffQuotes $hbzid)
     fi
@@ -197,19 +198,20 @@ for pid in `ls -d edoweb:*`; do
   # Falls ja, ermittle Aleph-ID zu der PID.
   hbzid="keine"
   status_code="unknown"
-  status_code_line=`curl -Is -u $REGAL_ADMIN:$REGAL_PASSWORD "$BACKEND/resource/$pid.json" | head -1`
-  # echo $status_code_line
-  if [[ "$status_code_line" =~ ^HTTP(.*)\ ([0-9]{1,3})\ (.*)$ ]]; 
-  then 
-    status_code=${BASH_REMATCH[2]}
-  else
-    echo "Statuscode-Zeile ist nicht im erwarteten Format. Continuing anyway."
-  fi
+  IFS=$'\n'
+  for httpResponse in `curl -is -u $REGAL_ADMIN:$REGAL_PASSWORD "$BACKEND/resource/$pid.json"`; do
+    # echo $httpResponse
+    if [[ "$httpResponse" =~ ^HTTP(.*)\ ([0-9]{1,3})\ (.*)$ ]]; then
+      status_code=${BASH_REMATCH[2]}
+    fi
+  done
+  echo "statusCode: $status_code"
+  # echo "httpResonse is now: $httpResponse"
   if [ $status_code == 404 ]; then
     echo "pid $pid existiert nicht."
   else
     # Alles OK mit der PID. Ermittle Aleph-ID zu der PID.
-    hbzid=`curl -s "$BACKEND/resource/$pid.json" | jq '.hbzId[0]'`
+    hbzid=`echo $httpResponse | jq '.hbzId[0]'`
     if [ $hbzid ] && [ "$hbzid" != "null" ]; then
       hbzid=$(stripOffQuotes $hbzid)
     fi
@@ -373,13 +375,11 @@ for pid in `ls -d edoweb:*`; do
         ## and the exists test will evaluate to false.
         if [ -e "$dbfile" ]; then
           # echo "files do exist"
-          disc_usage_database=`cat *.db > /tmp/$$.db; du -ks /tmp/$$.db | sed 's/^\(.*\)\s.*$/\1/'`
-          rm /tmp/$$.db
-          disc_usage_database=`echo "scale=0; $disc_usage_database / 1024" | bc`
+          disc_usage_dbfile=`du -ks $dbfile | sed 's/^\(.*\)\s.*$/\1/'`
+          disc_usage_database=$((disc_usage_database + disc_usage_dbfile))
         fi
-        ## This is all we needed to know, so we can break after the first iteration
-        break
       done
+      disc_usage_database=`echo "scale=0; $disc_usage_database / 1024" | bc`
       echo "disc usage for database contents=$disc_usage_database"
       # von Log-Dateien belegter Plattenplatz
       disc_usage_logs=0
