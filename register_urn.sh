@@ -145,7 +145,7 @@ fi
 vondatum_hr=`date -d @$vonsekunden +"%Y-%m-%d"`
 bisdatum_hr=`date -d @$bissekunden +"%Y-%m-%d"`
 echo "Objekte mit Anlagedatum von $vondatum_hr bis $bisdatum_hr:" >> $mailbodydatei
-resultset=`curl -s -XGET $ELASTICSEARCH/$project/journal,monograph,file,webpage/_search -d'{"query":{"range" : {"isDescribedBy.created":{"from":"'$vondatum_hr'","to":"'$bisdatum_hr'"}} },"fields":["isDescribedBy.created"],"size":"50000"}'`
+resultset=`curl -s -XGET $ELASTICSEARCH/$project/journal,monograph,file,webpage,version/_search -d'{"query":{"range" : {"isDescribedBy.created":{"from":"'$vondatum_hr'","to":"'$bisdatum_hr'"}} },"fields":["isDescribedBy.created"],"size":"50000"}'`
 #echo "resultset="
 #echo $resultset | jq "."
 for hit in `echo $resultset | jq -c ".hits.hits[]"`
@@ -184,7 +184,7 @@ do
     # Ist das Objekt an der OAI-Schnittstelle "da" ?
     # 1. ist das Objekt an den Katalog gemeldet worden ?
     cat="?";
-    if [ "$contentType" = "file" ] || [ "$contentType" = "issue" ] || [ "$contentType" = "volume" ]; then
+    if [ "$contentType" = "file" ] || [ "$contentType" = "issue" ] || [ "$contentType" = "volume" ] || [ "$contentType" = "version" ]; then
       cat="X" # Status nicht anwendbar, da Objekt nicht im Katalog verzeichnet wird.
     else
       curlout_kat=$REGAL_TMP/curlout.$$.kat.xml
