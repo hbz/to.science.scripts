@@ -22,4 +22,5 @@ conf/application.conf
 scripts/variables.conf
 *~
 variables.conf
-regal-scripts.HIST
+*.HIST
+ks.*

@@ -26,6 +26,7 @@ for crawldir in `ls -d edoweb:*/20*/`; do
   for warcfile in *.warc.gz; do
     if [ -e "$warcfile" ]; then
       # WARC-Datei existiert, nichts verschieben
+      echo "WARC-Datei $warcfile existiert."
       echo "Crawl läuft noch oder ist abgebrochen."
       break
     fi
