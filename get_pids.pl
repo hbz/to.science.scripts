@@ -26,9 +26,9 @@ my $script = basename( $0 );
 my $log = *STDOUT;
 my $script_ohne_endung = $script;
 $script_ohne_endung =~ s/\.pl$//;
-my $REGAL_TMP = "/opt/regal/regal-tmp";
+my $REGAL_TMP = "/opt/toscience/tmp";
 my $outfile; # Dateiname(n); Hier werden die einzelnen Tranchen der Fedora-Response abgelegt (PIDS und Identifier)
-my $REGAL_LOGS = "/opt/regal/logs";
+my $REGAL_LOGS = "/opt/toscience/logs";
 my $pidfile = $REGAL_LOGS . "/" . "get_pids" . ".txt"; # PID-Liste
 my $idfile = $REGAL_LOGS . "/" . "get_identifiers" . ".txt"; # Identifier-Liste
 my $maxResults = 200000; # Max. Anzahl Fedora-Objekte, die dieses Skript liest

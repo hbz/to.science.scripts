@@ -19,15 +19,19 @@
 # ! Ingolf Kuss     | 19.12.2019 | Neuanlage                                  !
 # +---------------------------------------------------------------------------+
 
+# SITE=https://www.alumnat-sankt-michael-boppard.de/
 SITE=$1
 WARCNAME=$2
 echo "Starting CDN-Gathering"
 echo "SITE=$SITE"
 echo "WARCNAME=$WARCNAME"
 
-CDNPARSE=/opt/regal/python3/bin/cdnparse
-WPULL=/opt/regal/python3/bin/wpull
+CDNPARSE=/opt/toscience/python3/bin/cdnparse
+WPULL=/opt/toscience/python3/bin/wpull
+# cdns="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"
 $CDNPARSE -a  $SITE > cdn.txt
+
+sleep 5
 
 cmd="$WPULL --warc-file $WARCNAME \
     --no-check-certificate \
@@ -42,3 +46,4 @@ cmd="$WPULL --warc-file $WARCNAME \
     --input-file=cdn.txt"
 echo "executing command $cmd"
 $cmd
+

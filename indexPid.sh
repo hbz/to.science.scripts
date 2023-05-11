@@ -10,4 +10,4 @@ server=$2
 
 echo ""
 echo "index $pid"
-curl -s -u$REGAL_ADMIN:$REGAL_PASSWORD -XPOST $server/utils/index/$pid -H"accept: application/json" 
+curl -s -u$REGAL_ADMIN:$REGAL_PASSWORD -XPOST $server/utils/index/$pid -H"accept: application/json"

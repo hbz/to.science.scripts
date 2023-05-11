@@ -9,6 +9,6 @@ source variables.conf
 perl get_pids.pl -m 100000 -n $INDEXNAME -o $REGAL_LOGS/get_pids.txt
 
 echo "index all"
-cat $REGAL_LOGS/get_pids.txt | parallel --jobs 5 ./indexPid.sh {} $BACKEND >$REGAL_LOGS/index-`date +"%Y%m%d"`.log 2>&1
+cat $REGAL_LOGS/get_pids.txt | parallel --jobs 5 ./indexPid.sh {} https://$BACKEND >$REGAL_LOGS/index-`date +"%Y%m%d"`.log 2>&1
 
 cd -
