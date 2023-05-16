@@ -9,8 +9,8 @@
 echo "*************************************************************"
 echo "BEGINN move files from crawldir " `date`
 echo "*************************************************************"
-jobDir=/opt/regal/wpull-data-crawldir
-outDir=/opt/regal/wpull-data
+jobDir=/opt/toscience/wpull-data-crawldir
+outDir=/opt/toscience/wpull-data
 cd $jobDir
 for crawldir in edoweb:*/20*/; do
   if [ ! -e "$crawldir" ]; then
