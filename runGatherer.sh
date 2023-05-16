@@ -17,9 +17,6 @@ scriptdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Einlesen der Umgebungsvariablen
 cd $scriptdir
 source variables.conf
-# noch einnmal der Pfad, in dem dieses Skript steht, dieses Mal aus Umgebungsvariablen gebaut:
-home_dir=$CRONJOBS_DIR
-server=$SERVER
 passwd=$REGAL_PASSWORD
 project=$INDEXNAME
 regalApi=$BACKEND
@@ -30,12 +27,13 @@ fi
 
 echo "Beginn runGatherer"
 echo "Aktuelles Datum/Uhrzeit: "`date +"%d.%m.%Y %H:%M:%S"`
-echo "home-Verzeichnis: $home_dir"
 echo "Projekt: $project"
-echo "Server: $server"
+echo "REGAL_API: $regalApi"
 
 
-runGatherer=`curl -s -XPOST -u$REGAL_ADMIN:$passwd "$regalApi/utils/runGatherer"`
+#echo "REGAL_ADMIN=$REGAL_ADMIN"
+#echo "REGAL_PASSWD=$passwd"
+runGatherer=`curl -s -XPOST -u$REGAL_ADMIN:$passwd "https://$regalApi/utils/runGatherer"`
 echo "Ergebnis: $runGatherer\n"; # Ausgabe in Log-Datei
 
 echo "siehe Log-Datei $REGAL_APP/logs/webgatherer.log"
