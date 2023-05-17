@@ -22,10 +22,10 @@ function stripOffQuotes {
   echo ${string:1:$len-2};
 }
 
-reportDir=/opt/regal/crawlreports
+reportDir=/opt/toscience/crawlreports
 discUsageWebsites=$reportDir/$(hostname).discUsageWebsites.$(date +"%Y%m%d%H%M%S").csv
 crawlReport=$reportDir/$(hostname).crawlReport.$(date +"%Y%m%d%H%M%S").csv
-REGAL_TMP=/opt/regal/tmp
+REGAL_TMP=/opt/toscience/tmp
 if [ ! -d $REGAL_TMP ]; then mkdir $REGAL_TMP; fi
 aktJahr=`date +"%Y"`
 echo "*************************************************"
@@ -43,7 +43,7 @@ echo "^crawler;pid;aleph-id;url;crawlstart;crawl_status;error_cause;duration;uri
 sumHeritrixSites=0
 sumHeritrixDiscSpace=0
 sumHeritrixCrawls=0
-heritrixData=/data2/heritrix-data
+heritrixData=/opt/toscience/heritrix-data
 crawler=heritrix
 echo "crawler=$crawler"
 cd $heritrixData
@@ -185,8 +185,8 @@ echo " "
 sumWpullSites=0
 sumWpullDiscSpace=0
 sumWpullCrawls=0
-wpullData=/data2/wpull-data
-wpullDataCrawldir=/opt/regal/wpull-data-crawldir
+wpullData=/opt/toscience/wpull-data
+wpullDataCrawldir=/opt/toscience/wpull-data-crawldir
 crawler=wpull
 echo "crawler=$crawler"
 cd $wpullData

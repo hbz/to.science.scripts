@@ -33,7 +33,7 @@ echo "REGAL_API: $regalApi"
 
 #echo "REGAL_ADMIN=$REGAL_ADMIN"
 #echo "REGAL_PASSWD=$passwd"
-runGatherer=`curl -s -XPOST -u$REGAL_ADMIN:$passwd "https://$regalApi/utils/runGatherer"`
+runGatherer=`curl -s -XPOST -u$REGAL_ADMIN:$passwd "$regalApi/utils/runGatherer"`
 echo "Ergebnis: $runGatherer\n"; # Ausgabe in Log-Datei
 
 echo "siehe Log-Datei $REGAL_APP/logs/webgatherer.log"

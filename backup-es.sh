@@ -6,9 +6,9 @@ source variables.conf
 
 function init(){
     echo "Init"
-    echo "Please do apt install jq"
+    echo "Please do zypper install jq"
     mkdir -p $REGAL_BACKUP/elasticsearch
-    echo "Please do apt install jq"
+    echo "Please do zypper install jq"
     echo "Please do chown -R elasticsearch $REGAL_BACKUP/elasticsearch"
     curl -XPUT $ELASTICSEARCH/_snapshot/my_backup -d'{"type":"fs","settings":{"compress":true,"location":"$REGAL_BACKUP/elasticsearch"}}}'
     echo "Done!"
