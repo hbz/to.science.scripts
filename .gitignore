@@ -12,6 +12,7 @@ regal-default.ntriple
 /RUNNING_PID
 /.target
 log
+*.log
 .cache
 data
 .settings
