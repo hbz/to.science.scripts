@@ -45,7 +45,7 @@ fi
   
 # Umgebungsvariablen
 # der Pfad, in dem dieses Skript steht:
-home_dir=$CRONJOBS_DIR
+home_dir=$scriptdir
 server=$SERVER
 passwd=$REGAL_PASSWORD
 project=${INDEXNAME}2

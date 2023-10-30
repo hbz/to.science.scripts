@@ -9,13 +9,13 @@
 
   #rsync -avR --delete "${quelle}"  "${ziel}${heute}/" --link-dest="${ziel}last/"
   #ln -nsf "${ziel}${heute}" "${ziel}last"
-  rsync -avz --delete "${quelle}" "${ziel}"
-  rsync -avz --delete "/data2_old/heritrix-data/" "/data2/heritrix-data/"
-  rsync -avz --delete "/data2_old/cdn-data/" "/data2/cdn-data/"
-  rsync -avz --delete "/data2_old/public-data/" "/data2/public-data/"
+  rsync -avz "${quelle}" "${ziel}"
+  rsync -avz "/data2_old/heritrix-data/" "/data2/heritrix-data/"
+  rsync -avz "/data2_old/cdn-data/" "/data2/cdn-data/"
+  rsync -avz "/data2_old/public-data/" "/data2/public-data/"
 
   # 2. Auf der 4 TB-Platte /data_old gespeicherte Webschnitte (wpull-data):
-  rsync -avz --delete "/data_old/edoweb/wpull-data/" "/data2/wpull-data/"
+  rsync -avz "/data_old/edoweb/wpull-data/" "/data2/wpull-data/"
   # Bem.: Das sind im einzelnen folgende Websites:
   # /data2_old/wpull-data/edoweb:1127 -> /data/edoweb/wpull-data/edoweb:1127
   # /data2_old/wpull-data/edoweb:1192 -> /data/edoweb/wpull-data/edoweb:1192
@@ -35,9 +35,10 @@
   # /data2_old/wpull-data/edoweb:7042881 -> /data/edoweb/wpull-data/edoweb:7042881
   # 08.09.2023, 09:00 Uhr: die Daten von /data_old/edoweb/wpull-data sind komplett nach /data2/wpull-data/ übertragen worden.
 
-  rsync -avz --delete "/data_old/restrictedweb/" "/data2/restrictedweb/"
-  rsync -avz --delete "/data_old/webharvests/" "/data2/webharvests/"
-  rsync -avz --delete "/data_old/wget-data/" "/data2/wget-data/"
+  rsync -avz "/data_old/restrictedweb/" "/data2/restrictedweb/"
+  rsync -avz "/data_old/webharvests/" "/data2/webharvests/"
+  rsync -avz "/data_old/wget-data/" "/data2/wget-data/"
+  rsync -avz "/data_old/alt-daten/" "/data2/alt-daten/"
   # von /data_old gelangen auf diese Weise auf die Platte /data2 folgende Volumina:
   #   1613381 MB  edoweb/
   #       629 MB  restrictedweb/  
