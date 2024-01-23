@@ -18,14 +18,14 @@ function loadLogFile() {
 
     PATTERN=$1
     echo Lade $PATTERN >> $STATS_LOG
-    zgrep --no-filename $PATTERN /var/log/apache2/other_vhosts_access.*|sort|uniq > $REGAL_TMP/matomoImport.log
+    zgrep --no-filename $PATTERN /var/log/apache2.prod/access_log*|sort|uniq > $REGAL_TMP/matomoImport.log
 
     cd $REGAL_TMP/$DIR
     split -l 5000 $REGAL_TMP/matomoImport.log
     
     for i in `ls`
     do
-	/usr/bin/python2 $MATOMO/misc/log-analytics/import_logs.py --recorder-max-payload-size=200 --url $MATOMO_URL --login $MATOMO_ADMIN --password $MATOMO_PASSWORD $i --idsite=$IDSITE #>> $STATS_LOG
+	/usr/bin/python $MATOMO/misc/log-analytics/import_logs.py --recorder-max-payload-size=200 --url $MATOMO_URL --login $MATOMO_ADMIN --password $MATOMO_PASSWORD $i --idsite=$IDSITE >> $STATS_LOG
     done
     cd -
     rm -rf $REGAL_TMP/$DIR
@@ -33,6 +33,8 @@ function loadLogFile() {
 
 
 loadLogFile "$YESTERDAY"
+#loadLogFile "01/Nov/2023"
+#loadLogFile "31/Oct/2023"
 #loadLogFile "18/Feb/2019"
 #loadLogFile "07/Mar/2019"
 #loadLogFile "19/Mar/2019"

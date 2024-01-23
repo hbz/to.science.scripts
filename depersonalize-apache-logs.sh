@@ -16,7 +16,7 @@ anoBytes=".0.0"
 function postProcess(){
 #  echo remove $1 
 #  rm -f $1
-  mv $1 /opt/regal/apachelog.bck
+  mv $1 /opt/toscience/apachelog.bck
 }
 
 #-----------config end-----------------

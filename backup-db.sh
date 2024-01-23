@@ -12,7 +12,7 @@ function init(){
 
 function backup(){
     SNAPSHOT=`date +%Y%m%d-%H%M%S`
-    mysqldump -u root -p$REGAL_PASSWORD --events --all-databases > $REGAL_BACKUP/mysql/$SNAPSHOT.sql
+    mysqldump -u root -p$MYSQL_PASSWORD --events --all-databases > $REGAL_BACKUP/mysql/$SNAPSHOT.sql
 }
 
 function clean(){
@@ -38,7 +38,7 @@ function clean(){
 
 function restore(){
     SNAPSHOT=123
-    mysql -u root $REGAL_PASSWORD -p < $SNAPSHOT.sql
+    mysql -u root $MYSQL_PASSWORD -p < $SNAPSHOT.sql
 }
 
 # Use -gt 1 to consume two arguments per pass in the loop (e.g. each
