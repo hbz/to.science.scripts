@@ -5,8 +5,9 @@
 #| I. Kuss   | 27.01.2021 | Neuanlage
 #| I. Kuss   | 15.06.2021 | Erzeugt auch eine Identifier-Liste. Identifier sind HT-Nrn.
 #|           |            | Für EDOZWO-1070 (Dublettenabgleich).
+#| I. Kuss   | 08.11.2023 | Fedora-Abfrage : Unterscheidung zwischen aktiven und inaktiven Objekten
 # Beispielaufruf:
-# perl get_pids.pl -s -m 100000 -n edoweb -o $REGAL_LOGS/get_pids.txt -i $REGAL_LOGS/get_identifiers.txt
+# perl get_pids.pl -s -m 100000 -n edoweb -z active -o $REGAL_LOGS/get_pids.txt -i $REGAL_LOGS/get_identifiers.txt
 # Output der PID-Liste standardmäßig (ohne Option -o) nach $REGAL_LOGS/get_pids.txt
 # Output der Identifier-Liste standardmäßig (ohne Option -i) nach $REGAL_LOGS/get_identifiers.txt
 
@@ -35,6 +36,7 @@ my $maxResults = 200000; # Max. Anzahl Fedora-Objekte, die dieses Skript liest
 my $resumptionToken; # Wiederaufnahme-Token zur Iteration der mehrfachen Curl-Aufrufe an die Fedora REST-API
 my $curl = ""; # Curl-Objekt für Perl
 my $namensraum = "";
+my $zustand = "A"; # "state" des Fedora-Objektes: "A" = aktive, "D" = gelöscht
 my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst)=localtime(time);
 my $zeitstempel = sprintf ("%04d%02d%02d%02d%02d%02d", $year+1900,$mon+1,$mday,$hour,$min,$sec);
 
@@ -42,7 +44,7 @@ my $zeitstempel = sprintf ("%04d%02d%02d%02d%02d%02d", $year+1900,$mon+1,$mday,$
 # Auswertung Kommandozeilen-Optionen
 # **********************************
 my %opts=();
-getopts('hi:m:n:o:sS', \%opts) or usage("ungültige Optionen");
+getopts('hi:m:n:o:sSz:', \%opts) or usage("ungültige Optionen");
 if ( defined($opts{h}) ) {
   usage("Hilfeseite");
   }
@@ -72,6 +74,11 @@ if ( defined($opts{o}) ) {
   $pidfile = $opts{o};
   }
 printf $log "Output-Datei (PID-Liste): %s\n", $pidfile;
+if ( defined($opts{z}) ) {
+  if( $opts{z} eq "active" ) { $zustand = "A"; }
+  if( $opts{z} eq "deleted" ) { $zustand = "D"; }
+  }
+printf $log "Selektiere auf Objektzustand \"state=%s\"\n", $zustand;
 
 # Kommandozeilen-Parameter
 # if (! $ARGV[0] ) { usage(); }
@@ -88,6 +95,7 @@ sub write_to_lists {
   my $line;
   my $pid = "";
   my $identifier = "";
+  my $state = "";
   $resumptionToken = "";
   while (<OUT>) {
     $line = $_; chomp($line);
@@ -96,9 +104,13 @@ sub write_to_lists {
       # Beginn eines neuen Objektes
       $pid = "";
       $identifier = "";
+      $state = "";
     }
     elsif( $line =~ /^[ \t]+<pid>$namensraum:(.*)<\/pid>$/ ) {
       $pid = $1;
+    }
+    elsif( $line =~ /^[ \t]+<state>(.*)<\/state>$/ ) {
+      $state = $1;
     }
     elsif( $line =~ /^[ \t]+<identifier>$namensraum:(.*)<\/identifier>$/ ) {
       # die PID kommt noch einmal als Identifier => ignorieren
@@ -117,9 +129,12 @@ sub write_to_lists {
     }
     elsif( $line =~ /^[ \t]+<\/objectFields>$/ ) {
       # Ende des Objektes. Objekt ausgeben.
-      printf PID "$namensraum:$pid\n";
-      if( defined $identifier && $identifier ne "" ) {
-        printf IDF "$identifier;$namensraum:$pid\n";
+      if( $state eq $zustand ) {
+        # nur ausgeben, falls Objekt den gewünschten Zustand hat
+        printf PID "$namensraum:$pid\n";
+        if( defined $identifier && $identifier ne "" ) {
+          printf IDF "$identifier;$namensraum:$pid\n";
+        }
       }
     }
     elsif( $line =~ /^[ \t]+<token>(.*)<\/token>$/ ) {
@@ -168,7 +183,7 @@ if( -e $idfile ) {
 # Erstmalige Anfrage; Lies erste Tranche
 my $tranche = 0;
 $outfile = $REGAL_TMP . "/" . $script_ohne_endung . ".tranche" . sprintf("%04d", $tranche);
-$curl->setopt(CURLOPT_URL, "http://localhost:8080/fedora/objects/?pid=true&identifier=true&query=pid~$namensraum:*&maxResults=$maxResults&resultFormat=xml");
+$curl->setopt(CURLOPT_URL, "http://localhost:8080/fedora/objects/?pid=true&identifier=true&state=true&query=pid~$namensraum:*&maxResults=$maxResults&resultFormat=xml");
 my $fh;
 open $fh, ">$outfile" or die "Kann Out-Datei $outfile nicht schreiben!($!)";
 $curl->setopt(CURLOPT_WRITEDATA, $fh);
@@ -193,7 +208,7 @@ while( $resumptionToken && $resumptionToken ne "" ) {
   $tranche++;
   printf $log "INFO: Hole Tranche Nr. %d (nächste 100 Objekte)\n", $tranche;
   $outfile = $REGAL_TMP . "/" . $script_ohne_endung . ".tranche" . sprintf("%04d", $tranche);
-  $curl->setopt(CURLOPT_URL, "http://localhost:8080/fedora/objects/?sessionToken=$resumptionToken&pid=true&identifier=true&query=pid~$namensraum:*&maxResults=$maxResults&resultFormat=xml"); # liefert die nächsten 100 Objekte
+  $curl->setopt(CURLOPT_URL, "http://localhost:8080/fedora/objects/?sessionToken=$resumptionToken&pid=true&identifier=true&state=true&query=pid~$namensraum:*&maxResults=$maxResults&resultFormat=xml"); # liefert die nächsten 100 Objekte
   open $fh, ">$outfile" or die "Kann Out-Datei $outfile nicht schreiben!($!)";
   $curl->setopt(CURLOPT_WRITEDATA, $fh);
   $retcode = $curl->perform();
@@ -234,6 +249,7 @@ sub usage {
        -n :   Namensraum; das Prefix im Objekt-Identifier
        -o :   Output-Datei : die PID-Liste
     -s,-S :   Ausgabe auf den Bildschirm (Screen); kein Schreiben in Protokolldatei
+       -z :   inactive|deleted : wählt nur aktive bzw. gelöschte Objekte aus. Standardwert: aktive
   Beispiel:   perl get_pids.pl -s -m 100000 -n edoweb
 ENDE
   exit 0;
