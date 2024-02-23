@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 
 scriptdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $scriptdir
@@ -21,3 +21,25 @@ numOfUpdatePids=`grep  "Enrichment.*succeeded!" /tmp/updateMetadata | grep -v "N
 echo "Updated Pids $numOfUpdatePids" >> $log
 grep  "Enrichment.*succeeded!" /tmp/updateMetadata | grep -v "Not updated"|grep -o "edoweb:[^\ ]*"|sort|uniq >> $log
 cd -
+
+# ****************************
+# E-Mail verschicken mit Summe
+# ****************************
+mailbodydatei=$REGAL_TMP/mail_updateAll.$$.out.txt
+echo "******************************************" > $mailbodydatei
+echo "$PROJECT wöchentlicher Update All Report" >> $mailbodydatei
+echo "******************************************" >> $mailbodydatei
+aktdate=`date +"%d.%m.%Y %H:%M:%S"`
+echo "Aktuelles Datum und Uhrzeit: $aktdate" >> $mailbodydatei
+echo "Bericht für den Server: $SERVER" >> $mailbodydatei
+echo "" >> $mailbodydatei
+echo "Aktualisiere alle Titelobjekte (Monographien, Zeitschriften, Websites), die seit der letzen Änderung in Lobid modifiziert wurden." >> $mailbodydatei
+echo "Anzahl tatsächliche aktualisierter Titelobjekte, lobidifiziert & angereichert:" >> $mailbodydatei
+echo "    $numOfUpdatePids" >> $mailbodydatei
+echo "Im Einzelnen:" >> $mailbodydatei
+grep  "Enrichment.*succeeded!" /tmp/updateMetadata | grep -v "Not updated"|grep -o "$NAMESPACE:[^\ ]*"|sort|uniq >> $mailbodydatei
+
+subject="$PROJECT wöchentlicher Update All Report"
+recipients=$EMAIL_RECIPIENT_ADMIN_USERS
+mailx -s "$subject" "$recipients" < $mailbodydatei
+# rm $mailbodydatei

@@ -441,7 +441,7 @@ echo ""
 baseUrl=https://www.$SERVER/crawlreports
 mailbodydatei=$REGAL_TMP/mail_crawlReport.$$.out.txt
 echo "******************************************" > $mailbodydatei
-echo "hbz edoweb Website Crawl Reports" >> $mailbodydatei
+echo "$PROJECT Website Crawl Reports" >> $mailbodydatei
 echo "******************************************" >> $mailbodydatei
 aktdate=`date +"%d.%m.%Y %H:%M:%S"`
 echo "Aktuelles Datum und Uhrzeit: $aktdate" >> $mailbodydatei
@@ -450,10 +450,10 @@ echo "" >> $mailbodydatei
 echo "Aktuelle Speicherplatzbelegung (Summen) durch Website-Crawls: $baseUrl/`basename $discUsageWebsites`" >> $mailbodydatei
 echo "Aktuelle Status und Kennzahlen der einzelnen Crawl-Aufträge : $baseUrl/`basename $crawlReport`" >> $mailbodydatei
 
-subject="edoweb Website Crawl Reports"
-xheader="X-Edoweb: $(hostname) crawl reports"
-recipients=$EMAIL_RECIPIENT_ADMIN_USERS
-mailx -s "$subject" -a "$xheader" $recipients < $mailbodydatei
+subject="$PROJECT Website Crawl Reports";
+xheader="X-Edoweb: $(hostname) crawl reports";
+recipients=$EMAIL_RECIPIENT_ADMIN_USERS;
+mailx -s "$subject" "$recipients" < $mailbodydatei
 # rm $mailbodydatei
 
 exit 0
