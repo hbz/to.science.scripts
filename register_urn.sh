@@ -238,7 +238,7 @@ do
       # Ausgabe und Weiterbehandlung nur im Fehlerfalle
       # minimalen Update auf das Objekt machen, z.B. über erneutes Setzen der Zugriffrechte
       # dadurch wird das Objekt dann an der Katalogschnittstelle gemeldet
-      update=`curl -s -H "Content-Type: application/json" -XPATCH -u$REGAL_ADMIN:$passwd -d'{"publishScheme":"public"}' "$regalApi/resource/$id"`
+      update=`curl -s -H "Content-Type: application/json" -XPATCH -u$REGAL_ADMIN:$passwd -d'{"@id":"'$id'"}' "$regalApi/resource/$id"`
       aktdatetime=`date +"%d.%m.%Y %H:%M:%S"`
       echo "$aktdatetime: $update\n"; # Ausgabe in log-Datei
       updateResponse=${update:0:80}
