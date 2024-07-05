@@ -22,6 +22,11 @@
 # SITE=https://www.alumnat-sankt-michael-boppard.de/
 SITE=$1
 WARCNAME=$2
+USERAGENT=$3
+COOKIE=""
+if [ $# -gt 3 ]; then
+  COOKIE=$4
+fi
 echo "Starting CDN-Gathering"
 echo "SITE=$SITE"
 echo "WARCNAME=$WARCNAME"
@@ -41,6 +46,12 @@ cmd="$WPULL --warc-file $WARCNAME \
     --waitretry=20 \
     --random-wait \
     --strip-session-id \
+    --user-agent=\"$USERAGENT\""
+if [ ! -z "$COOKIE" ]; then
+  cmd="$cmd \
+    --header=\"Cookie:$COOKIE\""
+fi
+cmd="$cmd \
     --warc-append \
     --database $WARCNAME-cdn.db \
     --input-file=cdn.txt"
