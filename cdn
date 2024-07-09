@@ -49,12 +49,25 @@ cmd="$WPULL --warc-file $WARCNAME \
     --user-agent=\"$USERAGENT\""
 if [ ! -z "$COOKIE" ]; then
   cmd="$cmd \
-    --header=\"Cookie:$COOKIE\""
+    --header=\"Cookie: $COOKIE\""
 fi
 cmd="$cmd \
     --warc-append \
     --database $WARCNAME-cdn.db \
     --input-file=cdn.txt"
 echo "executing command $cmd"
-$cmd
+#$cmd
+$WPULL --warc-file $WARCNAME \
+    --no-check-certificate \
+    --no-robots \
+    --delete-after \
+    --tries=5 \
+    --waitretry=20 \
+    --random-wait \
+    --strip-session-id \
+    --user-agent="$USERAGENT" \
+    --header="Cookie: $COOKIE" \
+    --warc-append \
+    --database $WARCNAME-cdn.db \
+    --input-file=cdn.txt
 
