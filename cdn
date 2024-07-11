@@ -36,6 +36,10 @@ WPULL=/opt/toscience/python3/bin/wpull
 # cdns="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"
 $CDNPARSE -a  $SITE > cdn.txt
 
+if [ -f ../site_parser.pl ]; then
+	perl ../site_parser.pl
+fi
+
 sleep 5
 
 cmd="$WPULL --warc-file $WARCNAME \
