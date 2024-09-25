@@ -1,0 +1,40 @@
+#!/bin/bash
+
+usage()
+{
+    echo "This script enables and disables the oai-pmh polling by toggling the flag in the database."
+    echo "Usage: $0 {enable|disable|status}"
+    exit 1
+}
+scriptdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $scriptdir
+. variables.conf
+
+case "$1" in
+
+enable)
+    echo "set to 1"
+    mysql -uoaipmh -p$OAIPMH_PASSWORD -e"UPDATE oaipmh.rcAdmin SET pollingEnabled=1;"
+    ;;
+
+disable)
+    echo "set to 0"
+    mysql -uoaipmh -p$OAIPMH_PASSWORD -e"UPDATE oaipmh.rcAdmin SET pollingEnabled=0;"
+    ;;
+
+status)
+    mysql -uoaipmh -p$OAIPMH_PASSWORD -e"select pollingEnabled from oaipmh.rcAdmin;" | sed '2!d'
+    ;;
+
+log)
+    state=`mysql -uoaipmh -p$OAIPMH_PASSWORD -e"select pollingEnabled from oaipmh.rcAdmin;" | sed '2!d'`
+    timestamp=`date "+%Y-%m-%dT%H:%M:%S"`
+    echo $timestamp $state
+    ;;
+
+*)
+    usage
+    ;;
+
+esac
+
