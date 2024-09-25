@@ -9,7 +9,7 @@ days=7
 # look for files in this directory
 logDir="/var/log/apache2/"
 # with this extension 
-extension="*.gz"
+extension="*.xz"
 # depersonalize by replacing the last two bytes of an IP with this string
 anoBytes=".0.0"
 # define how to behave after anonymizing 
