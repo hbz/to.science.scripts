@@ -3,6 +3,7 @@ project/target
 target
 tmp
 .history
+nohup.out
 dist
 regal-default.ntriple
 /.idea
