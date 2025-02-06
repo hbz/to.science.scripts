@@ -12,7 +12,7 @@ echo "*************************************************************"
 jobDir=/opt/toscience/wpull-data-crawldir
 outDir=/opt/toscience/wpull-data
 cd $jobDir
-for crawldir in edoweb:*/20*/; do
+for crawldir in *:*/20*/; do
   if [ ! -e "$crawldir" ]; then
     echo "Leeres Crawldir, nichts zu tun."
     echo
@@ -20,7 +20,7 @@ for crawldir in edoweb:*/20*/; do
   fi
   break
 done
-for crawldir in `ls -d edoweb:*/20*/`; do
+for crawldir in `ls -d *:*/20*/`; do
   echo "crawldir=$crawldir"
   cd $jobDir/$crawldir
   for warcfile in *.warc.gz; do

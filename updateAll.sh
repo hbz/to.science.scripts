@@ -17,9 +17,9 @@ cat $REGAL_LOGS/titleObjects.txt | parallel --jobs 2 ./updatePid.sh {} $BACKEND 
 cp $log /tmp/updateMetadata
 echo >> $log
 echo "Summary" >> $log
-numOfUpdatePids=`grep  "Enrichment.*succeeded!" /tmp/updateMetadata | grep -v "Not updated"|grep -o "edoweb:[^\ ]*"|sort|uniq|wc -l`
+numOfUpdatePids=`grep  "Enrichment.*succeeded!" /tmp/updateMetadata | grep -v "Not updated"|grep -o "$INDEXNAME:[^\ ]*"|sort|uniq|wc -l`
 echo "Updated Pids $numOfUpdatePids" >> $log
-grep  "Enrichment.*succeeded!" /tmp/updateMetadata | grep -v "Not updated"|grep -o "edoweb:[^\ ]*"|sort|uniq >> $log
+grep  "Enrichment.*succeeded!" /tmp/updateMetadata | grep -v "Not updated"|grep -o "$INDEXNAME:[^\ ]*"|sort|uniq >> $log
 cd -
 
 # ****************************

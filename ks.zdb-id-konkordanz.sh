@@ -1,5 +1,5 @@
 #!/bin/bash
-# Diese Skript erstellt eine Konkordanz ZDB-ID <=> edoweb-ID
+# Diese Skript erstellt eine Konkordanz ZDB-ID <=> toscience-ID
 #              
 # Änderungshistorie:
 # Autor               | Datum      | Beschreibung
@@ -43,7 +43,7 @@ echo "Hole alle Zeitschriften"
 resultset=`curl -s -XGET $ELASTICSEARCH/${INDEXNAME}2/journal/_search -d'{"query":{"match_all":{}},"fields":["zdbId"],"size":"10000"}'`
 # echo "resultset="
 # echo $resultset | jq "."
-echo "edoweb-ID;ZDB-ID" > $outdatei
+echo "toscience-ID;ZDB-ID" > $outdatei
 for hit in `echo $resultset | jq -c ".hits.hits[]"`
 do
     # echo "hit=";

@@ -19,7 +19,7 @@ echo "Davon nicht erfolgreich eingesammelt:"
 echo "  - Site unbekannt verzogen.                    Anzahl:" `cat $LOG | grep -c "De Sick is unbekannt vertrocke !"`
 echo "  - Site umgezogen (wartet auf Bestaetigung).   Anzahl:" `cat $LOG | grep -c "De Sick is umjetrocke noh"`
 echo "  - Version konnte nicht angelegt werden.       Anzahl:" `cat $LOG | grep -c "Couldn't create webpage version for"`
-echo "Davon erfolgreich eingesammelt:                 Anzahl:" `cat $LOG | grep -c "edoweb:.* webgatherer conf updated!"`
+echo "Davon erfolgreich eingesammelt:                 Anzahl:" `cat $LOG | grep -c "$NAMESPACE:.* webgatherer conf updated!"`
 echo "nachrichtlich : Kein Host zur URL ! (wird irrtümlich als "erfolgreich gesammelt" gezaehlt): Anzahl:" `cat $LOG | grep -c "Kein Host zur URL !"`
 echo "******* ENDE Zaehlsummen *******"
 echo "Neu gestartete Crawls mit ID; Anzahl:" `cat $LOG | grep -c "Create new version for:.*"`
