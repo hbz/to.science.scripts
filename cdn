@@ -31,6 +31,8 @@ fi
 echo "Starting CDN-Gathering"
 echo "SITE=$SITE"
 echo "WARCNAME=$WARCNAME"
+echo "COOKIE=$COOKIE"
+echo "CDXFILE=$CDXFILE"
 
 CDNPARSE=/opt/toscience/python3/bin/cdnparse
 WPULL=/opt/toscience/python3/bin/wpull
@@ -62,7 +64,7 @@ if [ -n "$CDXFILE" ]; then
     --warc-dedup $CDXFILE"
 fi
 echo "executing command $cmd"
-$cmd
+exec $cmd
 # $WPULL --warc-file $WARCNAME \
 #     --no-check-certificate \
 #     --no-robots \
