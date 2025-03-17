@@ -59,23 +59,23 @@ cmd="$WPULL --warc-file $WARCNAME \
     --database $WARCNAME-cdn.db \
     --input-file=cdn.txt \
     --warc-cdx"
-if [ -n "$CDXFILE" ]; then
-  cmd="$cmd \
-    --warc-dedup $CDXFILE"
-fi
+# if [ -n "$CDXFILE" ]; then
+#   cmd="$cmd \
+#     --warc-dedup $CDXFILE"
+# fi
 echo "executing command $cmd"
-exec $cmd
-# $WPULL --warc-file $WARCNAME \
-#     --no-check-certificate \
-#     --no-robots \
-#     --delete-after \
-#     --tries=5 \
-#     --waitretry=20 \
-#     --random-wait \
-#     --strip-session-id \
-#     --user-agent="$USERAGENT" \
-#     --header="Cookie: $COOKIE" \
-#     --warc-append \
-#     --database $WARCNAME-cdn.db \
-#     --input-file=cdn.txt \
-#     --warc-cdx
+#exec $cmd
+$WPULL --warc-file $WARCNAME \
+     --no-check-certificate \
+     --no-robots \
+     --delete-after \
+     --tries=5 \
+     --waitretry=20 \
+     --random-wait \
+     --strip-session-id \
+     --user-agent="$USERAGENT" \
+     --header="$COOKIE" \
+     --warc-append \
+     --database $WARCNAME-cdn.db \
+     --input-file=cdn.txt \
+     --warc-cdx
