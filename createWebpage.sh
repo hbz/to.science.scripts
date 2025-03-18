@@ -1,8 +1,15 @@
 #!/bin/bash
 # Legt eine Webpage anhand von URL, vorläufigem Titel und ggfs. Intervall an.
 # Für TOS-1178 (UB Bonn 800 Webpages)
-# Ingolf Kuss, hbz. Anlagedatum: 21.01.2025
+# Änderungshistorie
+#+------------------------------+----------------------------------------------------------------------------------------
+#| Bearbeiter      | Datum      | Grund
+#+------------------------------+----------------------------------------------------------------------------------------
+#| Ingolf Kuss     | 21.01.2025 | Neuanlage
+#| Ingolf Kuss     | 10.02.2025 | Parameter PID (von - bis) hinzugefügt
+#+------------------------------+----------------------------------------------------------------------------------------
 
+set -o nounset
 source funktionen.sh
 scriptdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $scriptdir
@@ -42,13 +49,10 @@ shift $((OPTIND-1))
 title=$1
 url=$2
 intervall=$3
+pid=$4
 
 
 # Beginn der Hauptverarbeitung
-if [ ! -f $csv_datei ]; then
-  echo "ERROR: ($csv_datei) ist keine reguläre Datei !"
-  exit 0
-fi
 curlopts=""
 if [ $silent_off != 1 ]; then
   curlopts="$curlopts -s"
@@ -61,8 +65,8 @@ fi
 url_encoded=$(urlencode $url)
 title_encoded=$(urlencode "$title")
 intervall_encoded=$(urlencode "$intervall")
-echo "curl $curlopts -XPOST \"$BACKEND/resource/$NAMESPACE/createWebpage?url=$url_encoded&title=$title_encoded&interval=$intervall_encoded\""
-resultat=`curl $curlopts -u$ADMIN_USER:$PASSWORD -H"content-type:application/json" -XPOST -d"{\"contentType\":\"webpage\"}" "$BACKEND/resource/$NAMESPACE/createWebpage?url=$url_encoded&title=$title_encoded&interval=$intervall_encoded"`
+echo "curl $curlopts -XPOST \"$BACKEND/resource/$NAMESPACE/createWebpage?url=$url_encoded&title=$title_encoded&interval=$intervall_encoded&pid=$pid\""
+resultat=`curl $curlopts -u$ADMIN_USER:$PASSWORD -H"content-type:application/json" -XPOST -d"{\"contentType\":\"webpage\"}" "$BACKEND/resource/$NAMESPACE/createWebpage?url=$url_encoded&title=$title_encoded&interval=$intervall_encoded&pid=$pid"`
 echo $resultat
 id=`echo $resultat | jq ".[\"@id\"]"`
 id=$(stripOffQuotes "$id")

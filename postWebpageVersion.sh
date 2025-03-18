@@ -76,7 +76,7 @@ while getopts "d:f:gh?p:st:v:" opt; do
         ;;
     t)  timestamp=$OPTARG
         ;;
-    v)  versionPid=1
+    v)  versionPid=$OPTARG
         ;;
     esac
 done
