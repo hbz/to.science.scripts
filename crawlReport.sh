@@ -1,7 +1,7 @@
 #!/bin/bash
 # Listest Plattenplatz auf, der von Webschnitten belegt wurde. 
 # Inklusive "Beifang" (Logs, andere Verwaltungsdateien)
-# für wöchentlichen Bericht, der ans LBZ verschickt werden soll.
+# für wöchentlichen oder täglichen Bericht
 # Output-Format: CSV
 # Autor        | Datum      | Ticket      | Änderungsgrund
 # -------------+------------+-----------------------------------------------------------
@@ -34,8 +34,8 @@ echo "*************************************************"
 echo "schreibe nach csv-Dateien:"
 echo "   $discUsageWebsites"
 echo "   $crawlReport"
-echo "^crawler;pid;aleph-id;url;total_disc_usage [MB];anz_crawls;" > $discUsageWebsites
-echo "^crawler;pid;aleph-id;url;crawlstart;crawl_status;error_cause;duration;uris_processed;uri_successes;total_crawled_bytes;speed [KB/sec];disc_usage_warcs [MB];disc_usage_database [MB];disc_usage_logs [MB];" > $crawlReport
+echo "^PID;KZ;URL;total_disc_usage [MB];Webschnitte;Crawl-Versuche;Crawler;Aleph-ID;" > $discUsageWebsites
+echo "^PID;KZ;URL;Crawl-Start;Crawl-Status;Crawl-Dauer;Bytes eingesammelt;Anzahl URIs geholt;Geschwdgk. [KB/sec];disc_usage_warcs [MB];disc_usage_database [MB];disc_usage_logs [MB];Crawler;Aleph-ID;Fehlerursache;" > $crawlReport
 
 # 1. für Heritrix-Crawls
 # **********************
@@ -48,13 +48,16 @@ crawler=heritrix
 echo "crawler=$crawler"
 cd $heritrixData
 # Schleife über PIDs
-for pid in `ls -d edoweb:*`; do
+# ls Option -v : numerisch sortiert
+for pid in `ls -dv $NAMESPACE:*`; do
   echo
   echo "pid=$pid"
   # Gibt es die PID überhaupt im Regal-Backend ? (fehlerhafte Crawls könnten dort gelöscht worden sein)
   # Falls ja, ermittle Aleph-ID zu der PID.
   hbzid="keine"
   status_code="unknown"
+  title=""
+  kennzeichen=""
   IFS=$'\n'
   for httpResponse in `curl -is -u $REGAL_ADMIN:$REGAL_PASSWORD "$BACKEND/resource/$pid.json"`; do
     # echo $httpResponse
@@ -72,8 +75,29 @@ for pid in `ls -d edoweb:*`; do
     if [ $hbzid ] && [ "$hbzid" != "null" ]; then
       hbzid=$(stripOffQuotes $hbzid)
     fi
+    # Ermittle den Titel
+    title=`echo $httpResponse | jq '.title[0]'`
+    if [ -n "$title" ] && [ "$title" != "null" ]; then
+      title=$(stripOffQuotes $title)
+      if [ -n "$KENNZEICHEN" ]; then
+        # Ermittle auch ein Kennzeichen im Titel
+        OLDIFS=$IFS
+        IFS=","
+        read -ra array <<< "$KENNZEICHEN"
+        for KZ in "${array[@]}"
+        do
+          if [[ "$title" =~ ^$KZ[:\ ] ]]; then
+            kennzeichen=$KZ
+	    break
+	  fi
+        done
+        IFS=$OLDIFS
+      fi
+    fi
   fi
   echo "hbzid=$hbzid"
+  echo "Titel=$title"
+  echo "Kennzeichen=$kennzeichen"
   sumHeritrixSites=$(($sumHeritrixSites+1))
   cd $heritrixData/$pid
   # url zu der pid
@@ -84,12 +108,13 @@ for pid in `ls -d edoweb:*`; do
   total_disc_usage=`echo "scale=0; $total_disc_usage / 1024" | bc`
   echo "total disc usage=$total_disc_usage MB"
   sumHeritrixDiscSpace=`echo "scale=0; $sumHeritrixDiscSpace + $total_disc_usage" | bc`
-  anz_crawls=0
+  anz_success=`curl -XGET -u$ADMIN_USER:$ADMIN_PASSWORD -H"Content-type: application/json" "$BACKEND/resource/$pid.json2" | jq '.hasPart | length'`
+  anz_attempts=0
   if [ -d latest ]; then
     # Schleife über alle Crawls zu dieser pid
     for crawldir in 20???????????? ; do
       if [ -d "$crawldir" ]; then
-        anz_crawls=$(($anz_crawls+1))
+        anz_attempts=$(($anz_attempts+1))
         if [[ "$crawldir" =~ ^$aktJahr..........$ ]]; then 
           # Crawl im aktuellen Jahr, wird weiter ausgewertet
           echo "crawldir=$crawldir"
@@ -109,22 +134,22 @@ for pid in `ls -d edoweb:*`; do
         total_crawled_bytes=""
         kb_sec=""
         if [ -f reports/crawl-report.txt ]; then
-          crawl_status=`grep "^crawl status" reports/crawl-report.txt | sed 's/^.*: \(.*\)$/\1/'`
+          crawl_status=`grep -m 1 "^crawl status" reports/crawl-report.txt | sed 's/^.*: \(.*\)$/\1/'`
           echo "crawl_status=$crawl_status"
-          duration=`grep "^duration" reports/crawl-report.txt | sed 's/^.*: \(.*\)$/\1/'`
+          duration=`grep -m 1 "^duration" reports/crawl-report.txt | sed 's/^.*: \(.*\)$/\1/'`
           echo "Dauer=$duration"
-          uris_processed=`grep "^URIs processed" reports/crawl-report.txt | sed 's/^.*: \(.*\)$/\1/'`
+          uris_processed=`grep -m 1 "^URIs processed" reports/crawl-report.txt | sed 's/^.*: \(.*\)$/\1/'`
           echo "uris_processed=$uris_processed"
-          uri_successes=`grep "^URI successes" reports/crawl-report.txt | sed 's/^.*: \(.*\)$/\1/'`
+          uri_successes=`grep -m 1 "^URI successes" reports/crawl-report.txt | sed 's/^.*: \(.*\)$/\1/'`
           echo "uri_successes=$uri_successes"
-          uri_failures=`grep "^URI failures" reports/crawl-report.txt | sed 's/^.*: \(.*\)$/\1/'`
-          uri_disregards=`grep "^URI disregards" reports/crawl-report.txt | sed 's/^.*: \(.*\)$/\1/'`
-          novel_uris=`grep "^novel URIs" reports/crawl-report.txt | sed 's/^.*: \(.*\)$/\1/'`
-          total_crawled_bytes=`grep "^total crawled bytes" reports/crawl-report.txt | sed 's/^.*: \(.*\)$/\1/'`
+          uri_failures=`grep -m 1 "^URI failures" reports/crawl-report.txt | sed 's/^.*: \(.*\)$/\1/'`
+          uri_disregards=`grep -m 1 "^URI disregards" reports/crawl-report.txt | sed 's/^.*: \(.*\)$/\1/'`
+          novel_uris=`grep -m 1 "^novel URIs" reports/crawl-report.txt | sed 's/^.*: \(.*\)$/\1/'`
+          total_crawled_bytes=`grep -m 1 "^total crawled bytes" reports/crawl-report.txt | sed 's/^.*: \(.*\)$/\1/'`
           echo "total_crawled_bytes=$total_crawled_bytes"
-          novel_crawled_bytes=`grep "^novel crawled bytes" reports/crawl-report.txt | sed 's/^.*: \(.*\)$/\1/'`
-          uris_sec=`grep "^URIs/sec" reports/crawl-report.txt | sed 's/^.*: \(.*\)$/\1/'`
-          kb_sec=`grep "^KB/sec" reports/crawl-report.txt | sed 's/^.*: \(.*\)$/\1/'`
+          novel_crawled_bytes=`grep -m 1 "^novel crawled bytes" reports/crawl-report.txt | sed 's/^.*: \(.*\)$/\1/'`
+          uris_sec=`grep -m 1 "^URIs/sec" reports/crawl-report.txt | sed 's/^.*: \(.*\)$/\1/'`
+          kb_sec=`grep -m 1 "^KB/sec" reports/crawl-report.txt | sed 's/^.*: \(.*\)$/\1/'`
           echo "KB/sec=$kb_sec"
         else
           # kein reports-Verzeichnis
@@ -152,7 +177,7 @@ for pid in `ls -d edoweb:*`; do
           echo "disc usage for logs=$disc_usage_logs"
         fi
         # *** Schreibe Zeile nach crawlReport für diesen Crawl***
-        echo "$crawler;$pid;$hbzid;$url;$crawlstart;$crawl_status;$error_cause;$duration;$uris_processed;$uri_successes;$total_crawled_bytes;$kb_sec;$disc_usage_warcs;$disc_usage_database;$disc_usage_logs;" >> $crawlReport
+        echo "$pid;$kennzeichen;$url;$crawlstart;$crawl_status;$duration;$total_crawled_bytes;$uri_successes;$kb_sec;$disc_usage_warcs;$disc_usage_database;$disc_usage_logs;$crawler;$hbzid;$error_cause;" >> $crawlReport
         cd $heritrixData/$pid
         continue
       else
@@ -167,10 +192,12 @@ for pid in `ls -d edoweb:*`; do
     # echo "$crawler;$pid;$url;;;;;;;;;;;;" >> $crawlReport
   fi
   # Anzahl gestarteter Crawls zu dieser pid (inklusive Crawl-Versuche)
-  echo "anz_crawls=$anz_crawls"
-  sumHeritrixCrawls=$(($sumHeritrixCrawls+$anz_crawls))
+  echo "anz_attempts=$anz_attempts"
+  sumHeritrixCrawls=$(($sumHeritrixCrawls+$anz_attempts))
   # Schreibe Zeile nach discUsageWebsites für diese PID
-  echo "$crawler;$pid;$hbzid;$url;$total_disc_usage;$anz_crawls;" >> $discUsageWebsites
+  if [ $anz_attempts -gt 0 ]; then
+    echo "$pid;$kennzeichen;$url;$total_disc_usage;$anz_success;$anz_attempts;$crawler;$hbzid" >> $discUsageWebsites
+  fi
 done # next pid
 sumHeritrixDiscSpace=`echo "scale=1; $sumHeritrixDiscSpace / 1024" | bc`
 
@@ -178,7 +205,7 @@ echo " "
 echo "****************************************"
 echo " "
 
-# echo "^crawler;pid;url;total_disc_usage;anz_crawls;" > $discUsageWebsites
+# echo "^crawler;pid;url;total_disc_usage;anz_attempts;anz_success;" > $discUsageWebsites
 # echo "^crawler;pid;url;crawlstart;crawl_status;error_cause;duration;uris_processed;uri_successes;total_crawled_bytes;speed [KB/sec];disc_usage_warcs;disc_usage_database;disc_usage_logs;" > $crawlReport
 # 2. für wpull-Crawls
 # *******************
@@ -191,12 +218,14 @@ crawler=wpull
 echo "crawler=$crawler"
 cd $wpullData
 # Schleife über PIDs
-for pid in `ls -d edoweb:*`; do
+for pid in `ls -dv $NAMESPACE:*`; do
   echo
   echo "pid=$pid"
   # Gibt es die PID überhaupt im Regal-Backend ? (fehlerhafte Crawls könnten dort gelöscht worden sein)
   # Falls ja, ermittle Aleph-ID zu der PID.
   hbzid="keine"
+  title=""
+  kennzeichen=""
   status_code="unknown"
   IFS=$'\n'
   for httpResponse in `curl -is -u $REGAL_ADMIN:$REGAL_PASSWORD "$BACKEND/resource/$pid.json"`; do
@@ -215,8 +244,29 @@ for pid in `ls -d edoweb:*`; do
     if [ $hbzid ] && [ "$hbzid" != "null" ]; then
       hbzid=$(stripOffQuotes $hbzid)
     fi
+    # Ermittle den Titel
+    title=`echo $httpResponse | jq '.title[0]'`
+    if [ -n "$title" ] && [ "$title" != "null" ]; then
+      title=$(stripOffQuotes $title)
+      if [ -n "$KENNZEICHEN" ]; then
+        # Ermittle auch ein Kennzeichen im Titel
+        OLDIFS=$IFS
+        IFS=","
+        read -ra array <<< "$KENNZEICHEN"
+        for KZ in "${array[@]}"
+        do
+          if [[ "$title" =~ ^$KZ[:\ ] ]]; then
+            kennzeichen=$KZ
+	    break
+	  fi
+        done
+        IFS=$OLDIFS
+      fi
+    fi
   fi
   echo "hbzid=$hbzid"
+  echo "Titel=$title"
+  echo "Kennzeichen=$kennzeichen"
   sumWpullSites=$(($sumWpullSites+1))
   cd $wpullData/$pid
   url=""
@@ -224,22 +274,14 @@ for pid in `ls -d edoweb:*`; do
   total_disc_usage=`echo "scale=0; $total_disc_usage / 1024" | bc`
   echo "total disc usage=$total_disc_usage MB"
   sumWpullDiscSpace=`echo "scale=0; $sumWpullDiscSpace + $total_disc_usage" | bc`
-  anz_crawls=0
+  anz_success=`curl -XGET -u$ADMIN_USER:$ADMIN_PASSWORD -H"Content-type: application/json" "$BACKEND/resource/$pid.json2" | jq '.hasPart | length'`
+  anz_attempts=0
   # Schleife über alle Crawls zu dieser pid
   for crawldir in 20???????????? ; do
     if [ -d "$crawldir" ]; then
-      anz_crawls=$(($anz_crawls+1))
-      if [[ "$crawldir" =~ ^$aktJahr..........$ ]]; then 
-        # Crawl im aktuellen Jahr, wird weiter ausgewertet
-        echo "crawldir=$crawldir"
-      else
-        continue;
-      fi
-      inputdate=`echo $crawldir | sed 's/^\([0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]\)\([0-9][0-9]\)\([0-9][0-9]\)\([0-9][0-9]\)$/\1 \2:\3:\4/'`
-      crawlstart=`date -d "$inputdate" +'%FT%T'`
-      echo "crawlstart=$crawlstart"
+      anz_attempts=$(($anz_attempts+1))
+      # Ermittlung der URL
       cd $wpullData/$pid/$crawldir
-      # url
       for datei in WEB-*.warc.gz; do
         ## Check if the glob gets expanded to existing files.
         ## If not, datei here will be exactly the pattern above
@@ -253,6 +295,16 @@ for pid in `ls -d edoweb:*`; do
         ## This is all we needed to know, so we can break after the first iteration
         break
       done
+      if [[ "$crawldir" =~ ^$aktJahr..........$ ]]; then 
+        # Crawl im aktuellen Jahr, wird weiter ausgewertet
+        echo "crawldir=$crawldir"
+      else
+        cd $wpullData/$pid
+        continue;
+      fi
+      inputdate=`echo $crawldir | sed 's/^\([0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]\)\([0-9][0-9]\)\([0-9][0-9]\)\([0-9][0-9]\)$/\1 \2:\3:\4/'`
+      crawlstart=`date -d "$inputdate" +'%FT%T'`
+      echo "crawlstart=$crawlstart"
       crawl_status=""
       error_cause=""
       duration=""
@@ -272,7 +324,7 @@ for pid in `ls -d edoweb:*`; do
         elif grep --quiet "^wpull3: error" $crawllog ; then
           crawl_status="ERROR"
           echo "crawl_status=$crawl_status"
-          error_cause=`grep "^wpull3: error" $crawllog | sed 's/^wpull3: error: \(.*\)$/\1/'`
+          error_cause=`grep -m 1 "^wpull3: error" $crawllog | sed 's/^wpull3: error: \(.*\)$/\1/'`
           echo "error_cause=$error_cause"
         elif [ `stat --format=%Y $crawllog` -gt $(( `date +%s` - 3600 )) ]; then
           # crawl.log wurde in der letzten Stunde modifiziert
@@ -332,17 +384,17 @@ for pid in `ls -d edoweb:*`; do
             break
           done
         fi
-        duration=`grep "^INFO Duration" $crawllog | sed 's/^.*: \(.*\). Speed: \(.*\)\.$/\1 h/'`
+        duration=`grep -m 1 "^INFO Duration" $crawllog | sed 's/^.*: \(.*\). Speed: \(.*\)\.$/\1 h/'`
         echo "Dauer=$duration"
-        speed=`grep "^INFO Duration" $crawllog | sed 's/^.*: \(.*\). Speed: \(.*\)\.$/\2/'` # => kb_sec; "1.2 MiB/s", "30.8 KiB/s"
+        speed=`grep -m 1 "^INFO Duration" $crawllog | sed 's/^.*: \(.*\). Speed: \(.*\)\.$/\2/'` # => kb_sec; "1.2 MiB/s", "30.8 KiB/s"
         echo "speed=$speed"
         kb_sec=$speed
         kb_sec=`echo $kb_sec | sed 's/^\(.*\) KiB\/s$/\1/'`
         # hier noch Umrechnung, falls speed in MiB/s angegeben ist
-        files_downloaded=`grep "^INFO Downloaded" $crawllog | sed 's/^.*: \(.*\) files, \(.*\)\.$/\1/'` # => uris_successes
+        files_downloaded=`grep -m 1 "^INFO Downloaded" $crawllog | sed 's/^.*: \(.*\) files, \(.*\)\.$/\1/'` # => uris_successes
         echo "files_downloaded=$files_downloaded"
         uri_successes=$files_downloaded
-        bytes_downloaded=`grep "^INFO Downloaded" $crawllog | sed 's/^.*: \(.*\) files, \(.*\)\.$/\2/'` # = total_crawled_bytes
+        bytes_downloaded=`grep -m 1 "^INFO Downloaded" $crawllog | sed 's/^.*: \(.*\) files, \(.*\)\.$/\2/'` # = total_crawled_bytes
         echo "bytes_downloaded=$bytes_downloaded"
         total_crawled_bytes=$bytes_downloaded
       else
@@ -389,7 +441,7 @@ for pid in `ls -d edoweb:*`; do
       fi
       echo "disc usage for logs=$disc_usage_logs"
       # *** Schreibe Zeile nach crawlReport für diesen Crawl***
-      echo "$crawler;$pid;$hbzid;$url;$crawlstart;$crawl_status;$error_cause;$duration;$uris_processed;$uri_successes;$total_crawled_bytes;$kb_sec;$disc_usage_warcs;$disc_usage_database;$disc_usage_logs;" >> $crawlReport
+      echo "$pid;$kennzeichen;$url;$crawlstart;$crawl_status;$duration;$total_crawled_bytes;$uri_successes;$kb_sec;$disc_usage_warcs;$disc_usage_database;$disc_usage_logs;$crawler;$hbzid;$error_cause;" >> $crawlReport
       cd $wpullData/$pid
       continue
     else
@@ -397,17 +449,17 @@ for pid in `ls -d edoweb:*`; do
       break
     fi
   done
-  if [ $anz_crawls -eq 0 ]; then
+  if [ $anz_attempts -eq 0 ]; then
     # noch keine Crawls für diese pid vorhanden
     # *** Schreibe Zeile nach crawlReport für diese PID ***
     echo "no crawls yet" # kommt nie vor
     # echo "$crawler;$pid;$url;;;;;;;;;;;;" >> $crawlReport
   fi
   # Anzahl gestarteter Crawls zu dieser pid (inklusive Crawl-Versuche)
-  echo "anz_crawls=$anz_crawls"
+  echo "anz_attempts=$anz_attempts"
   # Schreibe Zeile nach discUsageWebsites für diese PID
-  echo "$crawler;$pid;$hbzid;$url;$total_disc_usage;$anz_crawls;" >> $discUsageWebsites
-  sumWpullCrawls=$(($sumWpullCrawls+$anz_crawls))
+  echo "$pid;$kennzeichen;$url;$total_disc_usage;$anz_success;$anz_attempts;$crawler;$hbzid" >> $discUsageWebsites
+  sumWpullCrawls=$(($sumWpullCrawls+$anz_attempts))
 done # next pid
 sumWpullDiscSpace=`echo "scale=1; $sumWpullDiscSpace / 1024" | bc`
 
@@ -416,6 +468,7 @@ echo "Summenwerte :"
 echo "****************************************"
 echo " "
 
+echo "Summen;Anzahl Sites;;belegter Plattenplatz;Anzahl Crawl-Versuche;" >> $discUsageWebsites
 echo "Anzahl Sites mit jemals für Heritrix eingeplanten Crawls: $sumHeritrixSites"
 echo "Anzahl angestarteter Heritrix-Crawls im Jahre $aktJahr: $sumHeritrixCrawls"
 echo "total disc usage for Heritrix Crawls: $sumHeritrixDiscSpace GB"
@@ -426,19 +479,19 @@ echo "total disc usage for Wpull Crawls: $sumWpullDiscSpace GB"
 echo "Summe wpull;$sumWpullSites Sites;;$sumWpullDiscSpace GB;$sumWpullCrawls;" >> $discUsageWebsites
 spaceLeftOnDevice=0
 nr_df_item=0
-for item in `df -h | awk '/\/data2$/ {print}'`; do
+for item in `df -h | awk '/\/data$/ {print}'`; do
   nr_df_item=$(($nr_df_item+1))
   if [ $nr_df_item -eq 4 ]; then spaceLeftOnDevice=$item; fi
 done
-echo "Space left on device /data2: $spaceLeftOnDevice"
-echo "Space left on device /data2;;;$spaceLeftOnDevice;;" >> $discUsageWebsites
+echo "Space left on device /data: $spaceLeftOnDevice"
+echo "Space left on device /data;;;$spaceLeftOnDevice;;" >> $discUsageWebsites
 echo "ENDE Crawl-Report" `date`
 echo ""
 
 # ********************************************************
 # E-Mail verschicken mit den Links zu den beiden Berichten
 # ********************************************************
-baseUrl=https://www.$SERVER/crawlreports
+baseUrl=https://www.$DOMAIN/crawlreports
 mailbodydatei=$REGAL_TMP/mail_crawlReport.$$.out.txt
 echo "******************************************" > $mailbodydatei
 echo "$PROJECT Website Crawl Reports" >> $mailbodydatei
@@ -453,6 +506,8 @@ echo "Aktuelle Status und Kennzahlen der einzelnen Crawl-Aufträge : $baseUrl/`b
 subject="$PROJECT Website Crawl Reports";
 xheader="X-Edoweb: $(hostname) crawl reports";
 recipients=$EMAIL_RECIPIENT_ADMIN_USERS;
+# Das manuelle Versenden funktioniert NICHT, wenn ich mehrere Adressaten auf einer Zeile angebe.
+# Also lege ich für jeden Adressaten eine Zeile an.
 mailx -s "$subject" "$recipients" < $mailbodydatei
 # rm $mailbodydatei
 
