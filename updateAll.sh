@@ -41,5 +41,12 @@ grep  "Enrichment.*succeeded!" /tmp/updateMetadata | grep -v "Not updated"|grep 
 
 subject="$PROJECT wöchentlicher Update All Report"
 recipients=$EMAIL_RECIPIENT_ADMIN_USERS
-mailx -s "$subject" "$recipients" < $mailbodydatei
+OLDIFS=$IFS
+IFS=" "
+read -ra array <<< "$recipients"
+for recipient in "${array[@]}"
+do
+  mailx -s "$subject" "$recipient" < $mailbodydatei
+done
+IFS=$OLDIFS
 # rm $mailbodydatei

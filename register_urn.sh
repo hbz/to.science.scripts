@@ -283,7 +283,14 @@ if [ -s $outdatei ]; then
   elif [ "$modus" = "katalog" ]; then
     subject="$project : WARN: NICHT an KATALOG gemeldete Objekte !!";
   fi
-  mailx -s "$subject" $recipients < $mailbodydatei
+  OLDIFS=$IFS
+  IFS=" "
+  read -ra array <<< "$recipients"
+  for recipient in "${array[@]}"
+  do
+    mailx -s "$subject" $recipient < $mailbodydatei
+  done
+  IFS=$OLDIFS
   # rm $mailbodydatei
 fi
 

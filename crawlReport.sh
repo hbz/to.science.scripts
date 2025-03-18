@@ -506,9 +506,14 @@ echo "Aktuelle Status und Kennzahlen der einzelnen Crawl-Aufträge : $baseUrl/`b
 subject="$PROJECT Website Crawl Reports";
 xheader="X-Edoweb: $(hostname) crawl reports";
 recipients=$EMAIL_RECIPIENT_ADMIN_USERS;
-# Das manuelle Versenden funktioniert NICHT, wenn ich mehrere Adressaten auf einer Zeile angebe.
-# Also lege ich für jeden Adressaten eine Zeile an.
-mailx -s "$subject" "$recipients" < $mailbodydatei
+OLDIFS=$IFS
+IFS=" "
+read -ra array <<< "$recipients"
+for recipient in "${array[@]}"
+do
+  mailx -s "$subject" -a "$xheader" $recipient < $mailbodydatei
+done
+IFS=$OLDIFS
 # rm $mailbodydatei
 
 exit 0
