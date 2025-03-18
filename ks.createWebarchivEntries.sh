@@ -126,8 +126,9 @@ while read zeile; do
 	## Mask spaces by <
 	zeile_maskiert=$(echo $zeile | tr " " "<")
 	arr=($(echo $zeile_maskiert | tr ";" "\n"))
-	if [ "$lb" == "DUS" ]; then
-		Titel="$lb: "$(echo ${arr[1]} | tr "<" " ")
+	if [ "$lb" = "DUS" ]; then
+		# Düsseldorf lieferte Bibliothekskürzel und Site-Name getrennt in den ersten beiden Spalten
+		Titel=$(echo ${arr[0]} | tr "<" " ")": "$(echo ${arr[1]} | tr "<" " ")
 		URL=$(echo ${arr[3]} | tr "<" " ")
 		Intervall=$(echo ${arr[4]} | tr "<" " ")
 	else
