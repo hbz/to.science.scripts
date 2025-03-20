@@ -75,7 +75,7 @@ for pid in `ls -dv $NAMESPACE:*`; do
     if [ $hbzid ] && [ "$hbzid" != "null" ]; then
       hbzid=$(stripOffQuotes $hbzid)
     fi
-    # Ermittle den Titel
+    # Ermittle den Titel und ggfs. das (Titel-)Kennzeichen
     title=`echo $httpResponse | jq '.title[0]'`
     if [ -n "$title" ] && [ "$title" != "null" ]; then
       title=$(stripOffQuotes $title)
@@ -88,8 +88,8 @@ for pid in `ls -dv $NAMESPACE:*`; do
         do
           if [[ "$title" =~ ^$KZ[:\ ] ]]; then
             kennzeichen=$KZ
-	    break
-	  fi
+            break
+          fi
         done
         IFS=$OLDIFS
       fi
@@ -244,7 +244,7 @@ for pid in `ls -dv $NAMESPACE:*`; do
     if [ $hbzid ] && [ "$hbzid" != "null" ]; then
       hbzid=$(stripOffQuotes $hbzid)
     fi
-    # Ermittle den Titel
+    # Ermittle den Titel und ggfs. das (Titel-)Kennzeichen
     title=`echo $httpResponse | jq '.title[0]'`
     if [ -n "$title" ] && [ "$title" != "null" ]; then
       title=$(stripOffQuotes $title)
@@ -257,8 +257,8 @@ for pid in `ls -dv $NAMESPACE:*`; do
         do
           if [[ "$title" =~ ^$KZ[:\ ] ]]; then
             kennzeichen=$KZ
-	    break
-	  fi
+            break
+          fi
         done
         IFS=$OLDIFS
       fi
@@ -511,7 +511,7 @@ IFS=" "
 read -ra array <<< "$recipients"
 for recipient in "${array[@]}"
 do
-  mailx -s "$subject" -a "$xheader" $recipient < $mailbodydatei
+  mailx -s "$subject" $recipient < $mailbodydatei
 done
 IFS=$OLDIFS
 # rm $mailbodydatei
