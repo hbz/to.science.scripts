@@ -503,7 +503,7 @@ echo "" >> $mailbodydatei
 echo "Aktuelle Speicherplatzbelegung (Summen) durch Website-Crawls: $baseUrl/`basename $discUsageWebsites`" >> $mailbodydatei
 echo "Aktuelle Status und Kennzahlen der einzelnen Crawl-Aufträge : $baseUrl/`basename $crawlReport`" >> $mailbodydatei
 
-subject="$PROJECT Website Crawl Reports";
+subject="$DOMAIN Website Crawl Reports";
 xheader="X-Edoweb: $(hostname) crawl reports";
 recipients=$EMAIL_RECIPIENT_ADMIN_USERS;
 OLDIFS=$IFS
