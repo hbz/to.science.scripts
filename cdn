@@ -63,7 +63,6 @@ echo "executing command $cmd"
 #$cmd
 $WPULL --warc-file $WARCNAME \
     --no-check-certificate \
-    --no-robots \
     --delete-after \
     --tries=5 \
     --waitretry=20 \
