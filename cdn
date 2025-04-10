@@ -23,15 +23,13 @@
 SITE=$1
 WARCNAME=$2
 USERAGENT=$3
-WAITSEC=$4
 COOKIE=""
-if [ $# -gt 4 ]; then
-  COOKIE=$5
+if [ $# -gt 3 ]; then
+  COOKIE=$4
 fi
 echo "Starting CDN-Gathering"
 echo "SITE=$SITE"
 echo "WARCNAME=$WARCNAME"
-echo "WAITSEC=$WAITSEC"
 
 CDNPARSE=/opt/toscience/python3/bin/cdnparse
 WPULL=/opt/toscience/python3/bin/wpull
@@ -50,7 +48,7 @@ cmd="$WPULL --warc-file $WARCNAME \
     --delete-after \
     --tries=5 \
     --waitretry=20 \
-    --wait=$WAITSEC \
+    --random-wait \
     --strip-session-id \
     --user-agent=\"$USERAGENT\""
 if [ ! -z "$COOKIE" ]; then
@@ -68,7 +66,7 @@ $WPULL --warc-file $WARCNAME \
     --delete-after \
     --tries=5 \
     --waitretry=20 \
-    --wait=$WAITSEC \
+    --random-wait \
     --strip-session-id \
     --user-agent="$USERAGENT" \
     --header="Cookie: $COOKIE" \
