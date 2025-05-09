@@ -36,7 +36,7 @@ echo "WAITSEC=$WAITSEC"
 CDNPARSE=/opt/toscience/python3/bin/cdnparse
 WPULL=/opt/toscience/python3/bin/wpull
 # cdns="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"
-$CDNPARSE -a  $SITE > cdn.txt
+$CDNPARSE -a  -u "$USERAGENT" -c "$COOKIE" $SITE > cdn.txt
 
 if [ -f ../site_parser.pl ]; then
 	perl ../site_parser.pl
