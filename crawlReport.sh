@@ -23,8 +23,9 @@ function stripOffQuotes {
 }
 
 reportDir=/opt/toscience/crawlreports
-discUsageWebsites=$reportDir/$(hostname).discUsageWebsites.$(date +"%Y%m%d%H%M%S").csv
-crawlReport=$reportDir/$(hostname).crawlReport.$(date +"%Y%m%d%H%M%S").csv
+discUsageWebsites=$reportDir/discUsageWebsites/$(hostname).discUsageWebsites.$(date +"%Y%m%d%H%M%S").csv
+crawlReport=$reportDir/crawlReports/$(hostname).crawlReport.$(date +"%Y%m%d%H%M%S").csv
+baseUrl=https://$DOMAIN/crawlreports
 REGAL_TMP=/opt/toscience/tmp
 if [ ! -d $REGAL_TMP ]; then mkdir $REGAL_TMP; fi
 aktJahr=`date +"%Y"`
@@ -35,7 +36,7 @@ echo "schreibe nach csv-Dateien:"
 echo "   $discUsageWebsites"
 echo "   $crawlReport"
 echo "^PID;KZ;URL;total_disc_usage [MB];Webschnitte;Crawl-Versuche;Crawler;Aleph-ID;" > $discUsageWebsites
-echo "^PID;KZ;URL;Crawl-Start;Crawl-Status;Crawl-Dauer;Bytes eingesammelt;Anzahl URIs geholt;Geschwdgk. [KB/sec];disc_usage_warcs [MB];disc_usage_database [MB];disc_usage_logs [MB];Crawler;Aleph-ID;Fehlerursache;" > $crawlReport
+echo "^PID;KZ;URL;Crawl-Start;Crawl-Status;Crawl-Dauer;Bytes eingesammelt;Anzahl URIs geholt;Geschwdgk. [KB/sec];disc_usage_warcs [MB];disc_usage_database [MB];disc_usage_logs [MB];Crawler;Aleph-ID;Fehlerursache(n);" > $crawlReport
 
 # 1. für Heritrix-Crawls
 # **********************
@@ -205,8 +206,6 @@ echo " "
 echo "****************************************"
 echo " "
 
-# echo "^crawler;pid;url;total_disc_usage;anz_attempts;anz_success;" > $discUsageWebsites
-# echo "^crawler;pid;url;crawlstart;crawl_status;error_cause;duration;uris_processed;uri_successes;total_crawled_bytes;speed [KB/sec];disc_usage_warcs;disc_usage_database;disc_usage_logs;" > $crawlReport
 # 2. für wpull-Crawls
 # *******************
 sumWpullSites=0
@@ -216,6 +215,7 @@ wpullData=/opt/toscience/wpull-data
 wpullDataCrawldir=/opt/toscience/wpull-data-crawldir
 crawler=wpull
 echo "crawler=$crawler"
+. ~/bin/syncCrawlErrorLogs.sh
 cd $wpullData
 # Schleife über PIDs
 for pid in `ls -dv $NAMESPACE:*`; do
@@ -307,6 +307,7 @@ for pid in `ls -dv $NAMESPACE:*`; do
       echo "crawlstart=$crawlstart"
       crawl_status=""
       error_cause=""
+      errors_link=""
       duration=""
       uris_processed=""
       uri_successes=""
@@ -440,8 +441,14 @@ for pid in `ls -dv $NAMESPACE:*`; do
         disc_usage_logs=`echo "scale=0; $disc_usage_logs / 1024" | bc`
       fi
       echo "disc usage for logs=$disc_usage_logs"
+      # Generiere einen Verweis zu einer detaillierten Fehlerdatei für fehlgschlagene, abgebrochene oder noch laufende Crawls
+      if [ -n "$error_cause" -a "$error_cause" != "no crawl log" ] || [ "$crawl_status" = "ABORTED" ] || [ "$crawl_status" = "RUNNING" ]; then
+        errors_link="$baseUrl/logAnalyses/$pid/$crawldir/crawlerrors.log"
+      else
+        errors_link=$error_cause
+      fi
       # *** Schreibe Zeile nach crawlReport für diesen Crawl***
-      echo "$pid;$kennzeichen;$url;$crawlstart;$crawl_status;$duration;$total_crawled_bytes;$uri_successes;$kb_sec;$disc_usage_warcs;$disc_usage_database;$disc_usage_logs;$crawler;$hbzid;$error_cause;" >> $crawlReport
+      echo "$pid;$kennzeichen;$url;$crawlstart;$crawl_status;$duration;$total_crawled_bytes;$uri_successes;$kb_sec;$disc_usage_warcs;$disc_usage_database;$disc_usage_logs;$crawler;$hbzid;$errors_link;" >> $crawlReport
       cd $wpullData/$pid
       continue
     else
@@ -491,7 +498,6 @@ echo ""
 # ********************************************************
 # E-Mail verschicken mit den Links zu den beiden Berichten
 # ********************************************************
-baseUrl=https://www.$DOMAIN/crawlreports
 mailbodydatei=$REGAL_TMP/mail_crawlReport.$$.out.txt
 echo "******************************************" > $mailbodydatei
 echo "$PROJECT Website Crawl Reports" >> $mailbodydatei
@@ -500,8 +506,8 @@ aktdate=`date +"%d.%m.%Y %H:%M:%S"`
 echo "Aktuelles Datum und Uhrzeit: $aktdate" >> $mailbodydatei
 echo "Berichte für den Server: $SERVER" >> $mailbodydatei
 echo "" >> $mailbodydatei
-echo "Aktuelle Speicherplatzbelegung (Summen) durch Website-Crawls: $baseUrl/`basename $discUsageWebsites`" >> $mailbodydatei
-echo "Aktuelle Status und Kennzahlen der einzelnen Crawl-Aufträge : $baseUrl/`basename $crawlReport`" >> $mailbodydatei
+echo "Aktuelle Speicherplatzbelegung (Summen) durch Website-Crawls: $baseUrl/discUsageWebsites/`basename $discUsageWebsites`" >> $mailbodydatei
+echo "Aktuelle Status und Kennzahlen der einzelnen Crawl-Aufträge : $baseUrl/crawlReports/`basename $crawlReport`" >> $mailbodydatei
 
 subject="$DOMAIN Website Crawl Reports";
 xheader="X-Edoweb: $(hostname) crawl reports";
