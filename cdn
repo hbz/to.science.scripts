@@ -73,4 +73,3 @@ $WPULL --warc-file $WARCNAME \
     --warc-append \
     --database $WARCNAME-cdn.db \
     --input-file=cdn.txt
-
