@@ -23,13 +23,16 @@
 SITE=$1
 WARCNAME=$2
 USERAGENT=$3
-COOKIE=""
-if [ $# -gt 3 ]; then
-  COOKIE=$4
+COOKIE=$4
+CDXFILE=""
+if [ $# -gt 4 ]; then
+  CDXFILE=$5
 fi
 echo "Starting CDN-Gathering"
 echo "SITE=$SITE"
 echo "WARCNAME=$WARCNAME"
+echo "COOKIE=$COOKIE"
+echo "CDXFILE=$CDXFILE"
 
 CDNPARSE=/opt/toscience/python3/bin/cdnparse
 WPULL=/opt/toscience/python3/bin/wpull
@@ -50,26 +53,29 @@ cmd="$WPULL --warc-file $WARCNAME \
     --waitretry=20 \
     --random-wait \
     --strip-session-id \
-    --user-agent=\"$USERAGENT\""
-if [ ! -z "$COOKIE" ]; then
-  cmd="$cmd \
-    --header=\"Cookie: $COOKIE\""
-fi
-cmd="$cmd \
+    --user-agent=\"$USERAGENT\" \
+    --header=\"$COOKIE\" \
     --warc-append \
     --database $WARCNAME-cdn.db \
-    --input-file=cdn.txt"
+    --input-file=cdn.txt \
+    --warc-cdx"
+# if [ -n "$CDXFILE" ]; then
+#   cmd="$cmd \
+#     --warc-dedup $CDXFILE"
+# fi
 echo "executing command $cmd"
-#$cmd
+#exec $cmd
 $WPULL --warc-file $WARCNAME \
-    --no-check-certificate \
-    --delete-after \
-    --tries=5 \
-    --waitretry=20 \
-    --random-wait \
-    --strip-session-id \
-    --user-agent="$USERAGENT" \
-    --header="Cookie: $COOKIE" \
-    --warc-append \
-    --database $WARCNAME-cdn.db \
-    --input-file=cdn.txt
+     --no-check-certificate \
+     --no-robots \
+     --delete-after \
+     --tries=5 \
+     --waitretry=20 \
+     --random-wait \
+     --strip-session-id \
+     --user-agent="$USERAGENT" \
+     --header="$COOKIE" \
+     --warc-append \
+     --database $WARCNAME-cdn.db \
+     --input-file=cdn.txt \
+     --warc-cdx
