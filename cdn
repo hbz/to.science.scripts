@@ -36,10 +36,17 @@ echo "COOKIE=$COOKIE"
 echo "WAITPARAM=$WAITPARAM"
 echo "CDXFILE=$CDXFILE"
 
+WAITSECS=0
+if [[ $WAITPARAM =~ ^wait= ]]; then
+    WAITSECS="${WAITPARAM//wait=/}"
+fi
+echo "WAITSECS=$WAITSECS"
+
 CDNPARSE=/opt/toscience/python3/bin/cdnparse
 WPULL=/opt/toscience/python3/bin/wpull
 # cdns="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"
-$CDNPARSE -a  -u "$USERAGENT" -c "$COOKIE" $SITE > cdn.txt
+echo "executing CDNParser: $CDNPARSE -a  -u \"$USERAGENT\" -c \"$COOKIE\" -w \"$WAITSECS\" $SITE > cdn.txt"
+$CDNPARSE -a  -u "$USERAGENT" -c "$COOKIE" -w "$WAITSECS" $SITE > cdn.txt
 
 if [ -f ../site_parser.pl ]; then
 	perl ../site_parser.pl
@@ -66,7 +73,7 @@ cmd="$WPULL --warc-file $WARCNAME \
 #   cmd="$cmd \
 #     --warc-dedup $CDXFILE"
 # fi
-echo "executing command $cmd"
+echo "executing CDN Precrawl command $cmd"
 #exec $cmd
 $WPULL --warc-file $WARCNAME \
     --no-check-certificate \
