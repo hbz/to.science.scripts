@@ -23,27 +23,29 @@ done
 for crawldir in `ls -d *:*/20*/`; do
   echo "crawldir=$crawldir"
   cd $jobDir/$crawldir
-  for warcfile in *.warc.gz; do
+  for warcfile in $outDir/${crawldir}*.warc.gz; do
     if [ -e "$warcfile" ]; then
-      # WARC-Datei existiert, nichts verschieben
+      # WARC-Datei existiert in outDir => verschieben
       echo "WARC-Datei $warcfile existiert."
-      echo "Crawl läuft noch oder ist abgebrochen."
-      break
-    fi
-    # Dateien verschieben
-    echo "Crawl wurde abgeschlossen. Dateien werden verschoben."
-    mv * $outDir/$crawldir
-    aktdirname=`basename $PWD`
-    cd ..
-    rmdir $aktdirname
-    echo "Verzeichnis $PWD/$aktdirname wurde gelöscht."
-    if [ -z "$(ls -A $PWD)" ]; then
-      # aktuelles Verzeichnis ist leer
+      # Dateien verschieben
+      echo "Crawl wurde abgeschlossen. Dateien werden verschoben."
+      mv * $outDir/$crawldir
       aktdirname=`basename $PWD`
       cd ..
       rmdir $aktdirname
       echo "Verzeichnis $PWD/$aktdirname wurde gelöscht."
+      if [ -z "$(ls -A $PWD)" ]; then
+        # aktuelles Verzeichnis ist leer
+        aktdirname=`basename $PWD`
+        cd ..
+        rmdir $aktdirname
+        echo "Verzeichnis $PWD/$aktdirname wurde gelöscht."
+      fi
+    else
+      echo "Crawl läuft, wurde abgebrochen oder ist fehlgeschlagen."
     fi
+    # wir wollten nur wissen, ob es eine WARC-Datei im Zielverzeichnis schon gibt; keine Iteration
+    break
   done
 done
 echo "ENDE move files from crawldir " `date`

@@ -40,6 +40,14 @@ echo "Im Einzelnen:" >> $mailbodydatei
 grep  "Enrichment.*succeeded!" /tmp/updateMetadata | grep -v "Not updated"|grep -o "$NAMESPACE:[^\ ]*"|sort|uniq >> $mailbodydatei
 
 subject="$PROJECT wöchentlicher Update All Report"
+xheader="X-Edoweb: $(hostname) update report"
 recipients=$EMAIL_RECIPIENT_ADMIN_USERS
-mailx -s "$subject" "$recipients" < $mailbodydatei
+OLDIFS=$IFS
+IFS=" "
+read -ra array <<< "$recipients"
+for recipient in "${array[@]}"
+do
+  mailx -s "$subject" "$recipient" < $mailbodydatei
+done
+IFS=$OLDIFS
 # rm $mailbodydatei

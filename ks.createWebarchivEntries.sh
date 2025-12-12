@@ -3,15 +3,30 @@
 # Erstellungsdatum: 17.01.2025
 # Beschreibung: Erstellt Webarchivierungs-Datensätze (Webpages) anhand einer CSV-Datei
 # Für TOS-1178 und TOS-1177 : Webarchivierung NRW ULBs, 800er-Listen
+# Änderungshistorie
+# +------------------------------+----------------------------------------------------------------------------------------
+# | Bearbeiter      | Datum      | Grund
+# +------------------------------+----------------------------------------------------------------------------------------
+# | Ingolf Kuss     | 17.01.2025 | Neuanlage
+# | Ingolf Kuss     | 10.02.2025 | Parameter PID (von - bis) hinzugefügt
+# +------------------------------+----------------------------------------------------------------------------------------
+set -o nounset
 source funktionen.sh
 
 usage() {
   cat <<EOF
   Erstellt Webarchivierungs-Datensätze (Webpages) anhand einer CSV-Datei
   Die CSV-Datei enthät: TITEL;ERSCHEINUNGSORT;URL;INTERVALL(optional)
-  Beispielaufruf:        ./ks.createWebarchivEntries.sh -l BN -f 4 -t 6 -i ../src/ULB_BN_Website-Archivierung_800_20241212.CSV  -- legt 3 Webpages an
+  Beispielaufrufe:       ./ks.createWebarchivEntries.sh -l MS -f 4 -t 203 -b 10001 -i ../src/ULB_MS_Website-Archivierung_800_2024-1.CSV  > ../logs/ks.createWebarchivEntries.ULB_MS_4-203.log 
+                           -- legt 197 Webpages im Namensraum 10001 bis 10197 an
+                         ./ks.createWebarchivEntries.sh -l MS -f 204 -t 818 -b 10198 -i ../src/ULB_MS_Website-Archivierung_800_2024-1.CSV  > ../logs/ks.createWebarchivEntries.ULB_MS_204-818.log 
+                         ./ks.createWebarchivEntries.sh -l DUS -f 3 -t 202 -b 20001 -i ../src/ULBDUS_Webarchivierung_800.CSV > ../logs/ks.createWebarchivEntries.ULB_DUS_3-202.log
+                         ./ks.createWebarchivEntries.sh -l DUS -f 203 -t 802 -b 20201 -i ../src/ULBDUS_Webarchivierung_800.CSV > ../logs/ks.createWebarchivEntries.ULB_DUS_203-802.log
+                         ./ks.createWebarchivEntries.sh -l BN -f 3 -t 202 -b 30001 -i ../src/ULB_BN_Website-Archivierung_800_20241212.CSV > ../logs/ks.createWebarchivEntries.ULB_BN_3-202.log
+                         ./ks.createWebarchivEntries.sh -l BN -f 203 -t 802 -b 30201 -i ../src/ULB_BN_Website-Archivierung_800_20241212.CSV > ../logs/ks.createWebarchivEntries.ULB_BN_203-802.log
 
   Optionen:
+   - p [PID]         PID; erste PID, die angelegt werden soll. Zählt dann hoch. Standard: leer (=> PID wird zufällig vergeben)
    - f [von]         von; erste zu bearbeitende Zeile der CSV-Datei, Standard: $von
    - h               Hilfe (dieser Text)
    - i [Input-Datei] Webarchiv-Daten im CSV-Format, Dateiname. Default: $csv_datei
@@ -24,6 +39,7 @@ EOF
   }
 
 # Default-Werte
+beginnPid=""
 von=4
 csv_datei="/opt/toscience/src/ULB_BN_Website-Archivierung_800_20241212.CSV"
 lb="BN"
@@ -35,8 +51,10 @@ source variables.conf
 
 # Auswertung der Optionen und Kommandozeilenparameter
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
-while getopts "f:h?i:l:st:v" opt; do
+while getopts "b:f:h?i:l:st:v" opt; do
     case "$opt" in
+    b)  beginnPid=$OPTARG
+        ;;
     f)  von=$OPTARG
         ;;
     h|\?) usage
@@ -72,6 +90,9 @@ fi
 
 echo "BACKEND=$BACKEND"
 echo "Lege Webpages an anhand von Datei: $csv_datei"
+if [ -n "$beginnPid" ]; then
+  echo "erste Pid: $beginnPid"
+fi
 echo "erste Zeile: $von"
 echo "letzte Zeile: $bis"
 echo "Landesbibliotheks-Kürzel: $lb"
@@ -87,6 +108,7 @@ iconv -f $encoding -t utf8 $csv_datei > $csv_datei.UTF-8
 
 # Lies die Input-Datei Zeile für Zeile ein
 n=0
+pid=$beginnPid
 while read zeile; do
         n=$(($n+1))
 	if [ $n -lt $von ]; then
@@ -95,20 +117,37 @@ while read zeile; do
 	if [ $bis -gt 0 ] && [ $n -gt $bis ]; then
 		continue
 	fi
+	if [[ $zeile == ^* ]]; then
+              	# Kommentarzeile
+                continue
+        fi
 	printf "Zeile Nr. $n\n"
 	# Split lines at semicolon
 	## Mask spaces by <
 	zeile_maskiert=$(echo $zeile | tr " " "<")
 	arr=($(echo $zeile_maskiert | tr ";" "\n"))
-	Titel=$(echo ${arr[0]} | tr "<" " ")
-	URL=$(echo ${arr[2]} | tr "<" " ")
-	Intervall=$(echo ${arr[3]} | tr "<" " ")
+	if [ "$lb" = "DUS" ]; then
+		# Düsseldorf lieferte Bibliothekskürzel und Site-Name getrennt in den ersten beiden Spalten
+		Titel=$(echo ${arr[0]} | tr "<" " ")": "$(echo ${arr[1]} | tr "<" " ")
+		URL=$(echo ${arr[3]} | tr "<" " ")
+		Intervall=$(echo ${arr[4]} | tr "<" " ")
+	else
+		Titel=$(echo ${arr[0]} | tr "<" " ")
+		URL=$(echo ${arr[2]} | tr "<" " ")
+		Intervall=$(echo ${arr[3]} | tr "<" " ")
+	fi
 	echo "Titel: $Titel"
 	echo "URL: $URL"
 	echo "Intervall: $Intervall"
+	if [ -n "$pid" ]; then
+		echo "PID: $pid"
+	fi
 
 	# Jetzt eine Webpage anlegen
-	./createWebpage.sh $curlopts "$Titel" "$URL" "$Intervall"
+	./createWebpage.sh $curlopts "$Titel" "$URL" "$Intervall" "$pid"
+	if [ -n "$pid" ]; then
+		pid=$(($pid+1))
+	fi
 	echo
 	
 done < $csv_datei.UTF-8
