@@ -24,14 +24,16 @@ SITE=$1
 WARCNAME=$2
 USERAGENT=$3
 COOKIE=$4
+WAITPARAM=$5
 CDXFILE=""
-if [ $# -gt 4 ]; then
-  CDXFILE=$5
+if [ $# -gt 5 ]; then
+  CDXFILE=$6
 fi
 echo "Starting CDN-Gathering"
 echo "SITE=$SITE"
 echo "WARCNAME=$WARCNAME"
 echo "COOKIE=$COOKIE"
+echo "WAITPARAM=$WAITPARAM"
 echo "CDXFILE=$CDXFILE"
 
 CDNPARSE=/opt/toscience/python3/bin/cdnparse
@@ -49,6 +51,7 @@ cmd="$WPULL --warc-file $WARCNAME \
     --no-check-certificate \
     --no-robots \
     --delete-after \
+    --$WAITPARAM \
     --tries=5 \
     --waitretry=20 \
     --random-wait \
@@ -66,16 +69,17 @@ cmd="$WPULL --warc-file $WARCNAME \
 echo "executing command $cmd"
 #exec $cmd
 $WPULL --warc-file $WARCNAME \
-     --no-check-certificate \
-     --no-robots \
-     --delete-after \
-     --tries=5 \
-     --waitretry=20 \
-     --random-wait \
-     --strip-session-id \
-     --user-agent="$USERAGENT" \
-     --header="$COOKIE" \
-     --warc-append \
-     --database $WARCNAME-cdn.db \
-     --input-file=cdn.txt \
-     --warc-cdx
+    --no-check-certificate \
+    --no-robots \
+    --delete-after \
+    --$WAITPARAM \
+    --tries=5 \
+    --waitretry=20 \
+    --random-wait \
+    --strip-session-id \
+    --user-agent="$USERAGENT" \
+    --header="$COOKIE" \
+    --warc-append \
+    --database $WARCNAME-cdn.db \
+    --input-file=cdn.txt \
+    --warc-cdx
