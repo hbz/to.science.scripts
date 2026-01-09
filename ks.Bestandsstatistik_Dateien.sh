@@ -48,7 +48,7 @@ shift $((OPTIND-1))
   perl get_pids.pl -m 100000 -n $INDEXNAME -z active -o $REGAL_LOGS/get_pids.${datetime}.txt
   echo `date`
   echo "FERTIG Erzeuge Liste aller Fedora-Objekte $REGAL_LOGS/get_pids.${datetime}.txt ."
-  # dieser Schritt läuft ca. 73 Minuten. Start 6.2.2025, 14:46 Uhr. Fertig 15:59 Uhr.
+  # dieser Schritt lief am 08.01.2026 30 Minuten lang.
 
 # Schritt 2. Hole für jedes Objekt die Metadaten aus der API (.json2)
 #    und berücksichtige nur Dateien. Gruppiere diese nach dem Jahr ihrer Neuanlage.
@@ -107,7 +107,4 @@ shift $((OPTIND-1))
   done
   echo `date`
   echo "ENDE Erzeuge Bestandsstatistik für Dateien."
-  # dieser Schritt läuft ca. 20 Stunden.
-  # dieser Schritt lief am 06.02.2025 von 16:18 Uhr bis 07.02., 12:55 Uhr.
-  # diese Liste wurde generiert und enthält 3344 Objekte:
-  # pidsToRegister=$REGAL_LOGS/URN-Vergabe_Zeitschriftenhefte.20250206161837.pids.sorted.csv
+  # dieser Schritt läuft vom 08.01. auf den 09.01.2026 15 Stunden und 28 Minuten.
