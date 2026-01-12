@@ -55,10 +55,13 @@ for pid in `ls -dv $NAMESPACE:*`; do
   echo "pid=$pid"
   # Gibt es die PID überhaupt im Regal-Backend ? (fehlerhafte Crawls könnten dort gelöscht worden sein)
   # Falls ja, ermittle Aleph-ID zu der PID.
+  nummer=0
   hbzid="keine"
   status_code="unknown"
   title=""
   kennzeichen=""
+  createdBy=""
+  lastModifiedBy=""
   IFS=$'\n'
   for httpResponse in `curl -is -u $REGAL_ADMIN:$REGAL_PASSWORD "$BACKEND/resource/$pid.json"`; do
     # echo $httpResponse
@@ -76,23 +79,53 @@ for pid in `ls -dv $NAMESPACE:*`; do
     if [ $hbzid ] && [ "$hbzid" != "null" ]; then
       hbzid=$(stripOffQuotes $hbzid)
     fi
-    # Ermittle den Titel und ggfs. das (Titel-)Kennzeichen
+    # Ermittle den Titel
     title=`echo $httpResponse | jq '.title[0]'`
     if [ -n "$title" ] && [ "$title" != "null" ]; then
       title=$(stripOffQuotes $title)
-      if [ -n "$KENNZEICHEN" ]; then
-        # Ermittle auch ein Kennzeichen im Titel
-        OLDIFS=$IFS
-        IFS=","
-        read -ra array <<< "$KENNZEICHEN"
-        for KZ in "${array[@]}"
-        do
-          if [[ "$title" =~ ^$KZ[:\ ] ]]; then
-            kennzeichen=$KZ
-            break
+    fi
+    if [ -n "$KENNZEICHEN" ]; then
+      # Ermittle das Landesbibliothekskennzeichen
+      # Ermittle das LB-Kennzeichen anhand des Nummernkreises
+      if [[ "$pid" =~ ^$NAMESPACE:([0-9]+)$ ]]; then
+        nummer=${BASH_REMATCH[1]}
+        echo "nummer=$nummer"
+      fi
+      if [ $nummer -ge 10000 ] && [ $nummer -lt 20000 ]; then
+        kennzeichen=""
+      elif [ $nummer -ge 20000 ] && [ $nummer -lt 30000 ]; then
+        kennzeichen=""
+      elif [ $nummer -ge 30000 ] && [ $nummer -lt 40000 ]; then
+        kennzeichen=""
+      else
+        # Ermittle das LB-Kennzeichen anhand des Erfassers oder des Letzten Bearbeiters
+        createdBy=`echo $httpResponse | jq '.isDescribedBy.createdBy'`
+        if [ $createdBy ] && [ "$createdBy" != "null" ]; then
+          createdBy=$(stripOffQuotes $createdBy)
+          echo "createdBy=$createdBy"
+        fi
+        if [ "$createdBy" = "" ] || [ "$createdBy" = "" ]; then
+          kennzeichen=""
+        elif [ "$createdBy" = "" ] || [ "$createdBy" = "" ] || [ "$createdBy" = "" ]; then
+          kennzeichen=""
+        elif [ "$createdBy" = "" ] || [ "$createdBy" = "" ] || [ "$createdBy" = "" ]; then
+          kennzeichen=""
+        fi
+        if [ "$kennzeichen" = "" ]; then
+          # Ermittle das LB-Kennzeichen anhand des Letzten Bearbeiters
+          lastModifiedBy=`echo $httpResponse | jq '.isDescribedBy.lastModifiedBy'`
+          if [ $lastModifiedBy ] && [ "$lastModifiedBy" != "null" ]; then
+            lastModifiedBy=$(stripOffQuotes $lastModifiedBy)
+            echo "lastModifiedBy=$lastModifiedBy"
           fi
-        done
-        IFS=$OLDIFS
+          if [ "$lastModifiedBy" = "" ] || [ "$lastModifiedBy" = "" ]; then
+            kennzeichen=""
+          elif [ "$lastModifiedBy" = "" ] || [ "$lastModifiedBy" = "" ] || [ "$lastModifiedBy" = "" ]; then
+            kennzeichen=""
+          elif [ "$lastModifiedBy" = "" ] || [ "$lastModifiedBy" = "" ] || [ "$lastModifiedBy" = "" ]; then
+            kennzeichen=""
+          fi
+        fi
       fi
     fi
   fi
@@ -223,9 +256,12 @@ for pid in `ls -dv $NAMESPACE:*`; do
   echo "pid=$pid"
   # Gibt es die PID überhaupt im Regal-Backend ? (fehlerhafte Crawls könnten dort gelöscht worden sein)
   # Falls ja, ermittle Aleph-ID zu der PID.
+  nummer=0
   hbzid="keine"
   title=""
   kennzeichen=""
+  createdBy=""
+  lastModifiedBy=""
   status_code="unknown"
   IFS=$'\n'
   for httpResponse in `curl -is -u $REGAL_ADMIN:$REGAL_PASSWORD "$BACKEND/resource/$pid.json"`; do
@@ -244,23 +280,53 @@ for pid in `ls -dv $NAMESPACE:*`; do
     if [ $hbzid ] && [ "$hbzid" != "null" ]; then
       hbzid=$(stripOffQuotes $hbzid)
     fi
-    # Ermittle den Titel und ggfs. das (Titel-)Kennzeichen
+    # Ermittle den Titel
     title=`echo $httpResponse | jq '.title[0]'`
     if [ -n "$title" ] && [ "$title" != "null" ]; then
       title=$(stripOffQuotes $title)
-      if [ -n "$KENNZEICHEN" ]; then
-        # Ermittle auch ein Kennzeichen im Titel
-        OLDIFS=$IFS
-        IFS=","
-        read -ra array <<< "$KENNZEICHEN"
-        for KZ in "${array[@]}"
-        do
-          if [[ "$title" =~ ^$KZ[:\ ] ]]; then
-            kennzeichen=$KZ
-            break
+    fi
+    if [ -n "$KENNZEICHEN" ]; then
+      # Ermittle das Landesbibliothekskennzeichen
+      # Ermittle das LB-Kennzeichen anhand des Nummernkreises
+      if [[ "$pid" =~ ^$NAMESPACE:([0-9]+)$ ]]; then
+        nummer=${BASH_REMATCH[1]}
+	echo "nummer=$nummer"
+      fi
+      if [ $nummer -ge 10000 ] && [ $nummer -lt 20000 ]; then
+        kennzeichen=""
+      elif [ $nummer -ge 20000 ] && [ $nummer -lt 30000 ]; then
+        kennzeichen=""
+      elif [ $nummer -ge 30000 ] && [ $nummer -lt 40000 ]; then
+        kennzeichen=""
+      else
+        # Ermittle das LB-Kennzeichen anhand des Erfassers oder des Letzen Bearbeiters
+        createdBy=`echo $httpResponse | jq '.isDescribedBy.createdBy'`
+        if [ $createdBy ] && [ "$createdBy" != "null" ]; then
+          createdBy=$(stripOffQuotes $createdBy)
+          echo "createdBy=$createdBy"
+        fi
+        if [ "$createdBy" = "" ] || [ "$createdBy" = "" ]; then
+          kennzeichen=""
+        elif [ "$createdBy" = "" ] || [ "$createdBy" = "" ] || [ "$createdBy" = "" ]; then
+          kennzeichen=""
+        elif [ "$createdBy" = "" ] || [ "$createdBy" = "" ] || [ "$createdBy" = "" ]; then
+          kennzeichen=""
+	fi
+        if [ "$kennzeichen" = "" ]; then
+          # Ermittle das LB-Kennzeichen anhand des Letzten Bearbeiters
+          lastModifiedBy=`echo $httpResponse | jq '.isDescribedBy.lastModifiedBy'`
+          if [ $lastModifiedBy ] && [ "$lastModifiedBy" != "null" ]; then
+            lastModifiedBy=$(stripOffQuotes $lastModifiedBy)
+            echo "lastModifiedBy=$lastModifiedBy"
           fi
-        done
-        IFS=$OLDIFS
+          if [ "$lastModifiedBy" = "" ] || [ "$lastModifiedBy" = "" ]; then
+            kennzeichen=""
+          elif [ "$lastModifiedBy" = "" ] || [ "$lastModifiedBy" = "" ] || [ "$lastModifiedBy" = "" ]; then
+            kennzeichen=""
+          elif [ "$lastModifiedBy" = "" ] || [ "$lastModifiedBy" = "" ] || [ "$lastModifiedBy" = "" ]; then
+            kennzeichen=""
+          fi
+        fi 
       fi
     fi
   fi
@@ -289,6 +355,8 @@ for pid in `ls -dv $NAMESPACE:*`; do
         if [ -e "$datei" ]; then
           # echo "files do exist"
           url_raw=`echo $datei | sed 's/^WEB\-\(.*\)\-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]\.warc\.gz/\1/'`
+          # noch einmal versuchen für Dateinamen mit Zeitstempel im Namen (seit Frühjahr 2025):
+          url_raw=`echo $url_raw | sed 's/^WEB\-\(.*\)\-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]\.warc\.gz/\1/'`
           url=`echo $url_raw | sed 's/_cdn$//'`
           echo "url=$url"
         fi
