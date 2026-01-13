@@ -36,7 +36,7 @@ echo "schreibe nach csv-Dateien:"
 echo "   $discUsageWebsites"
 echo "   $crawlReport"
 echo "^PID;KZ;URL;total_disc_usage [MB];Webschnitte;Crawl-Versuche;Crawler;Aleph-ID;" > $discUsageWebsites
-echo "^PID;KZ;URL;Crawl-Start;Crawl-Status;Crawl-Dauer;Bytes eingesammelt;Anzahl URIs geholt;Geschwdgk. [KB/sec];disc_usage_warcs [MB];disc_usage_database [MB];disc_usage_logs [MB];Crawler;Aleph-ID;Fehlerursache(n);" > $crawlReport
+echo "^PID;KZ;URL;Crawl-Start;Crawl-Status;Crawl-Dauer;Bytes eingesammelt;Anzahl URIs geholt;Geschwdgk. [KB/sec];disc_usage_warcs [MB];disc_usage_database [MB];disc_usage_logs [MB];Crawler;Aleph-ID;Link zur Logdatei mit allen Fehlern;Fehlerursache(n);" > $crawlReport
 
 # 1. für Heritrix-Crawls
 # **********************
@@ -63,7 +63,7 @@ for pid in `ls -dv $NAMESPACE:*`; do
   createdBy=""
   lastModifiedBy=""
   IFS=$'\n'
-  for httpResponse in `curl -is -u $REGAL_ADMIN:$REGAL_PASSWORD "$BACKEND/resource/$pid.json"`; do
+  for httpResponse in `curl -is -u $REGAL_ADMIN:$REGAL_PASSWORD "$BACKEND/resource/$pid.json2"`; do
     # echo $httpResponse
     if [[ "$httpResponse" =~ ^HTTP(.*)\ ([0-9]{1,3})\ (.*)$ ]]; then
       status_code=${BASH_REMATCH[2]}
@@ -125,7 +125,7 @@ for pid in `ls -dv $NAMESPACE:*`; do
           elif [ "$lastModifiedBy" = "" ] || [ "$lastModifiedBy" = "" ] || [ "$lastModifiedBy" = "" ]; then
             kennzeichen=""
           fi
-        fi
+        fi 
       fi
     fi
   fi
@@ -142,7 +142,7 @@ for pid in `ls -dv $NAMESPACE:*`; do
   total_disc_usage=`echo "scale=0; $total_disc_usage / 1024" | bc`
   echo "total disc usage=$total_disc_usage MB"
   sumHeritrixDiscSpace=`echo "scale=0; $sumHeritrixDiscSpace + $total_disc_usage" | bc`
-  anz_success=`curl -XGET -u$ADMIN_USER:$ADMIN_PASSWORD -H"Content-type: application/json" "$BACKEND/resource/$pid.json2" | jq '.hasPart | length'`
+  anz_success=`echo $httpResponse | jq '.hasPart | length'`
   anz_attempts=0
   if [ -d latest ]; then
     # Schleife über alle Crawls zu dieser pid
@@ -162,6 +162,7 @@ for pid in `ls -dv $NAMESPACE:*`; do
         # Auswertung der Informationen in reports/crawl-report.txt
         crawl_status=""
         error_cause=""
+        errors_link=""
         duration=""
         uris_processed=""
         uri_successes=""
@@ -211,7 +212,7 @@ for pid in `ls -dv $NAMESPACE:*`; do
           echo "disc usage for logs=$disc_usage_logs"
         fi
         # *** Schreibe Zeile nach crawlReport für diesen Crawl***
-        echo "$pid;$kennzeichen;$url;$crawlstart;$crawl_status;$duration;$total_crawled_bytes;$uri_successes;$kb_sec;$disc_usage_warcs;$disc_usage_database;$disc_usage_logs;$crawler;$hbzid;$error_cause;" >> $crawlReport
+	echo "$pid;$kennzeichen;$url;$crawlstart;$crawl_status;$duration;$total_crawled_bytes;$uri_successes;$kb_sec;$disc_usage_warcs;$disc_usage_database;$disc_usage_logs;$crawler;$hbzid;$errors_link;$error_cause;" >> $crawlReport
         cd $heritrixData/$pid
         continue
       else
@@ -264,7 +265,7 @@ for pid in `ls -dv $NAMESPACE:*`; do
   lastModifiedBy=""
   status_code="unknown"
   IFS=$'\n'
-  for httpResponse in `curl -is -u $REGAL_ADMIN:$REGAL_PASSWORD "$BACKEND/resource/$pid.json"`; do
+  for httpResponse in `curl -is -u $REGAL_ADMIN:$REGAL_PASSWORD "$BACKEND/resource/$pid.json2"`; do
     # echo $httpResponse
     if [[ "$httpResponse" =~ ^HTTP(.*)\ ([0-9]{1,3})\ (.*)$ ]]; then
       status_code=${BASH_REMATCH[2]}
@@ -311,7 +312,7 @@ for pid in `ls -dv $NAMESPACE:*`; do
           kennzeichen=""
         elif [ "$createdBy" = "" ] || [ "$createdBy" = "" ] || [ "$createdBy" = "" ]; then
           kennzeichen=""
-	fi
+        fi
         if [ "$kennzeichen" = "" ]; then
           # Ermittle das LB-Kennzeichen anhand des Letzten Bearbeiters
           lastModifiedBy=`echo $httpResponse | jq '.isDescribedBy.lastModifiedBy'`
@@ -340,7 +341,7 @@ for pid in `ls -dv $NAMESPACE:*`; do
   total_disc_usage=`echo "scale=0; $total_disc_usage / 1024" | bc`
   echo "total disc usage=$total_disc_usage MB"
   sumWpullDiscSpace=`echo "scale=0; $sumWpullDiscSpace + $total_disc_usage" | bc`
-  anz_success=`curl -XGET -u$ADMIN_USER:$ADMIN_PASSWORD -H"Content-type: application/json" "$BACKEND/resource/$pid.json2" | jq '.hasPart | length'`
+  anz_success=`echo $httpResponse | jq '.hasPart | length'`
   anz_attempts=0
   # Schleife über alle Crawls zu dieser pid
   for crawldir in 20???????????? ; do
@@ -359,6 +360,23 @@ for pid in `ls -dv $NAMESPACE:*`; do
           url_raw=`echo $url_raw | sed 's/^WEB\-\(.*\)\-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]\.warc\.gz/\1/'`
           url=`echo $url_raw | sed 's/_cdn$//'`
           echo "url=$url"
+        else # Suche auch noch in wpull-data-crawldir, falls Datei noch nicht verschoben wurde
+          for datei_path in $wpullDataCrawldir/$pid/$crawldir/WEB-*.warc.gz; do
+            ## Check if the glob gets expanded to existing files.
+            ## If not, datei here will be exactly the pattern above
+            ## and the exists test will evaluate to false.
+            if [ -e "$datei_path" ]; then
+              # echo "files do exist"
+             datei=`basename $datei_path`
+              url_raw=`echo $datei | sed 's/^WEB\-\(.*\)\-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]\.warc\.gz/\1/'`
+              # noch einmal versuchen für Dateinamen mit Zeitstempel im Namen (seit Frühjahr 2025):
+              url_raw=`echo $url_raw | sed 's/^WEB\-\(.*\)\-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]\.warc\.gz/\1/'`
+              url=`echo $url_raw | sed 's/_cdn$//'`
+              echo "url=$url"
+            fi
+            ## This is all we needed to know, so we can break after the first iteration
+            break
+          done
         fi
         ## This is all we needed to know, so we can break after the first iteration
         break
@@ -411,10 +429,10 @@ for pid in `ls -dv $NAMESPACE:*`; do
                 crawl_status="RUNNING"
                 echo "crawl_status=$crawl_status"
               elif grep --quiet "^RuntimeError: Event loop stopped" $crawllog; then
-                crawl_status="ABORTED"
+                crawl_status="ABORTED/PICKED"
                 echo "crawl_status=$crawl_status"
               elif grep --quiet "^ERROR" $crawllog ; then
-                crawl_status="ERROR"
+                crawl_status="ERROR/PICKED"
                 echo "crawl_status=$crawl_status"
                 error_cause=`grep "^ERROR" $crawllog | tail -n1 | sed 's/^ERROR \(.*\)$/\1/'`
                 echo "error_cause=$error_cause"
@@ -483,6 +501,19 @@ for pid in `ls -dv $NAMESPACE:*`; do
           # echo "files do exist"
           disc_usage_warcs=`du -ks $datei | sed 's/^\(.*\)\s.*$/\1/'`
           disc_usage_warcs=`echo "scale=0; $disc_usage_warcs / 1024" | bc`
+        else # Suche auch noch in wpull-data-crawldir, falls Datei noch nicht verschoben wurde
+          for datei in $wpullDataCrawldir/$pid/$crawldir/WEB-*.warc.gz; do
+            ## Check if the glob gets expanded to existing files.
+            ## If not, datei here will be exactly the pattern above
+            ## and the exists test will evaluate to false.
+            if [ -e "$datei" ]; then
+              # echo "files do exist"
+              disc_usage_warcs=`du -ks $datei | sed 's/^\(.*\)\s.*$/\1/'`
+              disc_usage_warcs=`echo "scale=0; $disc_usage_warcs / 1024" | bc`
+            fi
+            ## This is all we needed to know, so we can break after the first iteration
+            break
+          done
         fi
         ## This is all we needed to know, so we can break after the first iteration
         break
@@ -512,11 +543,9 @@ for pid in `ls -dv $NAMESPACE:*`; do
       # Generiere einen Verweis zu einer detaillierten Fehlerdatei für fehlgschlagene, abgebrochene oder noch laufende Crawls
       if [ -n "$error_cause" -a "$error_cause" != "no crawl log" ] || [ "$crawl_status" = "ABORTED" ] || [ "$crawl_status" = "RUNNING" ]; then
         errors_link="$baseUrl/logAnalyses/$pid/$crawldir/crawlerrors.log"
-      else
-        errors_link=$error_cause
       fi
       # *** Schreibe Zeile nach crawlReport für diesen Crawl***
-      echo "$pid;$kennzeichen;$url;$crawlstart;$crawl_status;$duration;$total_crawled_bytes;$uri_successes;$kb_sec;$disc_usage_warcs;$disc_usage_database;$disc_usage_logs;$crawler;$hbzid;$errors_link;" >> $crawlReport
+      echo "$pid;$kennzeichen;$url;$crawlstart;$crawl_status;$duration;$total_crawled_bytes;$uri_successes;$kb_sec;$disc_usage_warcs;$disc_usage_database;$disc_usage_logs;$crawler;$hbzid;$errors_link;$error_cause;" >> $crawlReport
       cd $wpullData/$pid
       continue
     else
