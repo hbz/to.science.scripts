@@ -358,6 +358,8 @@ for pid in `ls -dv $NAMESPACE:*`; do
           url_raw=`echo $datei | sed 's/^WEB\-\(.*\)\-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]\.warc\.gz/\1/'`
           # noch einmal versuchen für Dateinamen mit Zeitstempel im Namen (seit Frühjahr 2025):
           url_raw=`echo $url_raw | sed 's/^WEB\-\(.*\)\-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]\.warc\.gz/\1/'`
+          # noch einmal versuchen für Dateinamen mit ".attemptN" im Namen:
+          url_raw=`echo $url_raw | sed 's/^WEB\-\(.*\)\-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]\.attempt[0-9]\.warc\.gz/\1/'`
           url=`echo $url_raw | sed 's/_cdn$//'`
           echo "url=$url"
         else # Suche auch noch in wpull-data-crawldir, falls Datei noch nicht verschoben wurde
@@ -371,6 +373,8 @@ for pid in `ls -dv $NAMESPACE:*`; do
               url_raw=`echo $datei | sed 's/^WEB\-\(.*\)\-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]\.warc\.gz/\1/'`
               # noch einmal versuchen für Dateinamen mit Zeitstempel im Namen (seit Frühjahr 2025):
               url_raw=`echo $url_raw | sed 's/^WEB\-\(.*\)\-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]\.warc\.gz/\1/'`
+              # noch einmal versuchen für Dateinamen mit ".attemptN" im Namen:
+              url_raw=`echo $url_raw | sed 's/^WEB\-\(.*\)\-[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]\.warc\.gz\.attempt[0-9]/\1/'`
               url=`echo $url_raw | sed 's/_cdn$//'`
               echo "url=$url"
             fi
