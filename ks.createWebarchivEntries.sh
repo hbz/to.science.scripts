@@ -9,6 +9,7 @@
 # +------------------------------+----------------------------------------------------------------------------------------
 # | Ingolf Kuss     | 17.01.2025 | Neuanlage
 # | Ingolf Kuss     | 10.02.2025 | Parameter PID (von - bis) hinzugefügt
+# | Ingolf Kuss     | 16.01.2026 | Verwendung für die zweite Lieferung von 800er-Listen, TOS-1337 - TOS-1339
 # +------------------------------+----------------------------------------------------------------------------------------
 set -o nounset
 source funktionen.sh
@@ -26,7 +27,7 @@ usage() {
                          ./ks.createWebarchivEntries.sh -l BN -f 203 -t 802 -b 30201 -i ../src/ULB_BN_Website-Archivierung_800_20241212.CSV > ../logs/ks.createWebarchivEntries.ULB_BN_203-802.log
 
   Optionen:
-   - p [PID]         PID; erste PID, die angelegt werden soll. Zählt dann hoch. Standard: leer (=> PID wird zufällig vergeben)
+   - b [PID]         Beginn-PID; erste PID, die angelegt werden soll. Zählt dann hoch. Standard: leer (=> PID wird zufällig vergeben)
    - f [von]         von; erste zu bearbeitende Zeile der CSV-Datei, Standard: $von
    - h               Hilfe (dieser Text)
    - i [Input-Datei] Webarchiv-Daten im CSV-Format, Dateiname. Default: $csv_datei
@@ -126,16 +127,16 @@ while read zeile; do
 	## Mask spaces by <
 	zeile_maskiert=$(echo $zeile | tr " " "<")
 	arr=($(echo $zeile_maskiert | tr ";" "\n"))
-	if [ "$lb" = "DUS" ]; then
-		# Düsseldorf lieferte Bibliothekskürzel und Site-Name getrennt in den ersten beiden Spalten
-		Titel=$(echo ${arr[0]} | tr "<" " ")": "$(echo ${arr[1]} | tr "<" " ")
-		URL=$(echo ${arr[3]} | tr "<" " ")
-		Intervall=$(echo ${arr[4]} | tr "<" " ")
-	else
+	# if [ "$lb" = "DUS" ]; then
+	#	# Düsseldorf lieferte Bibliothekskürzel und Site-Name getrennt in den ersten beiden Spalten
+	#	Titel=$(echo ${arr[0]} | tr "<" " ")": "$(echo ${arr[1]} | tr "<" " ")
+	#	URL=$(echo ${arr[3]} | tr "<" " ")
+	#	Intervall=$(echo ${arr[4]} | tr "<" " ")
+	#else
 		Titel=$(echo ${arr[0]} | tr "<" " ")
 		URL=$(echo ${arr[2]} | tr "<" " ")
 		Intervall=$(echo ${arr[3]} | tr "<" " ")
-	fi
+	#fi
 	echo "Titel: $Titel"
 	echo "URL: $URL"
 	echo "Intervall: $Intervall"

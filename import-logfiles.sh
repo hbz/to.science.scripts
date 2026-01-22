@@ -1,4 +1,5 @@
 #! /bin/bash
+# Load apache logs of the previous day from /var/log/apache2.prod into the local piwik instance
 
 scriptdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
