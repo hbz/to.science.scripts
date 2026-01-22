@@ -51,7 +51,7 @@ passwd=$REGAL_PASSWORD
 project=${INDEXNAME}2
 regalApi=$BACKEND
 urn_api=$OAI_PMH
-oai_id="oai:api.$server:"
+oai_id="oai:api.$DOMAIN:"
 
 if [ ! -d $REGAL_LOGS ]; then
     mkdir $REGAL_LOGS
@@ -192,7 +192,7 @@ do
       cat="X" # Status nicht anwendbar, da Objekt nicht im Katalog verzeichnet wird.
     else
       curlout_kat=$REGAL_TMP/curlout.$$.kat.xml
-      curl -s -o $curlout_kat "$urn_api/?verb=GetRecord&metadataPrefix=mabxml-1&identifier=$oai_id$id"
+      curl -s -o $curlout_kat "$urn_api/?verb=GetRecord&metadataPrefix=marcxml&identifier=$oai_id$id"
       istda_kat=$(grep -c "<identifier>$oai_id$id</identifier>" $curlout_kat);
       if [ $istda_kat -gt 0 ]
       then
