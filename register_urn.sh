@@ -232,8 +232,8 @@ do
     
     if [ "$modus" = "register" ] && [ "$dnb" = "N" ]; then
       # Nachregistrierung des Objektes für URN-Vergabe
-      # KS20260123: hier das Skript verbessern: 6 -> length(INDEXNAME) +1 ; URN_SNID in variables.conf aufnehmen !
-      addURN=`curl -s -XPOST -u$REGAL_ADMIN:$passwd "$regalApi/utils/addUrn?id=${id:6}&namespace=$INDEXNAME&snid=hbz:lb"`
+      idnum=`echo $id | sed 's/^[^\:]*:\(.*\)$/\1/'`
+      addURN=`curl -s -XPOST -u$REGAL_ADMIN:$passwd "$regalApi/utils/addUrn?id=$idnum&namespace=$INDEXNAME&snid=$URNSNID"`
       echo "$aktdate: $addURN\n"; # Ausgabe in log-Datei
       addURNresponse=${addURN:0:80}
       echo -e "$url\t$cdate\t$cat\t$dnb\t$contentType\t\t$addURNresponse" >> $outdatei
