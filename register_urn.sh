@@ -210,25 +210,30 @@ do
     # 2. ist das Objekt an die DNB gemeldet worden (für URN-Vergabe) ?
     if [ "$modus" != "katalog" ]; then
       dnb="?"
-      curlout_dnb=$REGAL_TMP/curlout.$$.dnb.xml
-      curl -s -o $curlout_dnb "$urn_api/?verb=GetRecord&metadataPrefix=epicur&identifier=$oai_id$id"
-      istda_dnb=$(grep -c "<identifier>$oai_id$id</identifier>" $curlout_dnb);
-      if [ $istda_dnb -gt 0 ]
-      then
-        dnb="J"
+      if [ "$publishScheme" = "private" ]; then
+        dnb="X" # Status nicht anwendbar, da Objekt nicht veröffentlicht ist
       else
-        istnichtda_dnb=$(grep -c "<error code=\"idDoesNotExist\">" $curlout_dnb);
-        if [ $istnichtda_dnb ]
+        curlout_dnb=$REGAL_TMP/curlout.$$.dnb.xml
+        curl -s -o $curlout_dnb "$urn_api/?verb=GetRecord&metadataPrefix=epicur&identifier=$oai_id$id"
+        istda_dnb=$(grep -c "<identifier>$oai_id$id</identifier>" $curlout_dnb);
+        if [ $istda_dnb -gt 0 ]
         then
-          dnb="N"
+          dnb="J"
+        else
+          istnichtda_dnb=$(grep -c "<error code=\"idDoesNotExist\">" $curlout_dnb);
+          if [ $istnichtda_dnb ]
+          then
+            dnb="N"
+          fi
         fi
+        rm $curlout_dnb
       fi
-      rm $curlout_dnb
     fi
     
-    if [ "$modus" = "register" ] && [ "$dnb" != "J" ]; then
+    if [ "$modus" = "register" ] && [ "$dnb" = "N" ]; then
       # Nachregistrierung des Objektes für URN-Vergabe
-      addURN=`curl -s -XPOST -u$REGAL_ADMIN:$passwd "$regalApi/utils/addUrn?id=${id:7}&namespace=$INDEXNAME&snid=hbz:929:02"`
+      idnum=`echo $id | sed 's/^[^\:]*:\(.*\)$/\1/'`
+      addURN=`curl -s -XPOST -u$REGAL_ADMIN:$passwd "$regalApi/utils/addUrn?id=$idnum&namespace=$INDEXNAME&snid=$URNSNID"`
       echo "$aktdate: $addURN\n"; # Ausgabe in log-Datei
       addURNresponse=${addURN:0:80}
       echo -e "$url\t$cdate\t$cat\t$dnb\t$contentType\t\t$addURNresponse" >> $outdatei
