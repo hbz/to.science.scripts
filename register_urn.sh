@@ -137,7 +137,7 @@ if [ $sekundenseit1970 -lt $sekundenseit1970_am_202102080000 ]; then
 #   vonsekunden=$(( $sekundenseit1970_am_20191212 + ($tage_seit_20200615*7)*86400 ))
 #   bissekunden=$(( $vonsekunden + 14*86400 ))
 else
-  # Normalbetrieb: Nachregistrierung von Objekten, die vor sieben Tagen bis vor 21 Tagen angelegt wurden.
+  # Normalbetrieb: Nachregistrierung von Objekten, die vor drei Tagen bis vor 21 Tagen angelegt wurden. KS20260128
   vonsekunden=$sekundenseit1970-1814400; # - 3 Wochen
   bissekunden=$sekundenseit1970-259200;  # - 3 Tage  (war: 604800 für 1 Woche)
 fi
@@ -145,7 +145,7 @@ fi
 vondatum_hr=`date -d @$vonsekunden +"%Y-%m-%d"`
 bisdatum_hr=`date -d @$bissekunden +"%Y-%m-%d"`
 echo "Objekte mit Anlagedatum von $vondatum_hr bis $bisdatum_hr:" >> $mailbodydatei
-resultset=`curl -s -XGET $ELASTICSEARCH/$project/journal,monograph,file,webpage,version/_search -d'{"query":{"range" : {"isDescribedBy.created":{"from":"'$vondatum_hr'","to":"'$bisdatum_hr'"}} },"fields":["isDescribedBy.created","publishScheme"],"size":"50000"}'`
+resultset=`curl -s -XGET $ELASTICSEARCH/$project/journal,monograph,file,webpage,version/_search -d'{"query":{"range" : {"isDescribedBy.created":{"from":"'$vondatum_hr'","to":"'$bisdatum_hr'"}} },"fields":["isDescribedBy.created","publishScheme","hbzId"],"size":"50000"}'`
 #echo "resultset="
 #echo $resultset | jq "."
 for hit in `echo $resultset | jq -c ".hits.hits[]"`
@@ -175,6 +175,12 @@ do
     publishScheme=`echo $hit | jq -c ".fields[\"publishScheme\"][]"`
     publishScheme=$(stripOffQuotes $publishScheme)
 
+    unset hbzId;
+    hbzId=`echo $hit | jq -c ".fields[\"hbzId\"][]"`
+    if [ -n "$hbzId" ]; then
+      hbzId=$(stripOffQuotes $hbzId)
+    fi
+
     if [ -z "$id" ]; then
         continue;
     fi
@@ -183,12 +189,12 @@ do
     fi
 
     # Bearbeitung dieser id,cdate
-    echo "$aktdate: bearbeite id=$id, Anlagedatum $cdate, Zugriffsrecht Metadaten: $publishScheme"; # Ausgabe in log-Datei
+    echo "$aktdate: bearbeite id=$id, Anlagedatum $cdate, Zugriffsrecht Metadaten: $publishScheme, hbzId: \"$hbzId\""; # Ausgabe in log-Datei
     url=http://$server/resource/$id
     # Ist das Objekt an der OAI-Schnittstelle "da" ?
     # 1. ist das Objekt an den Katalog gemeldet worden ?
     cat="?";
-    if [ "$contentType" = "file" ] || [ "$contentType" = "issue" ] || [ "$contentType" = "volume" ] || [ "$contentType" = "version" ] || [ "$publishScheme" = "private" ]; then
+    if [ "$contentType" = "file" ] || [ "$contentType" = "issue" ] || [ "$contentType" = "volume" ] || [ "$contentType" = "version" ] || [ "$publishScheme" = "private" ] || [ -z "$hbzId" ]; then
       cat="X" # Status nicht anwendbar, da Objekt nicht im Katalog verzeichnet wird.
     else
       curlout_kat=$REGAL_TMP/curlout.$$.kat.xml
@@ -246,7 +252,7 @@ do
       aktdatetime=`date +"%d.%m.%Y %H:%M:%S"`
       echo "$aktdatetime: $update\n"; # Ausgabe in log-Datei
       updateResponse=${update:0:80}
-      echo -e "$url\t$cdate\t$cat\t$contentType\t\t$updateResponse" >> $outdatei
+      echo -e "$url\t$cdate\t$cat\t$contentType\t$hbzId\t$updateResponse" >> $outdatei
     fi
 
     id="";
@@ -254,11 +260,11 @@ do
 done
 
 if [ "$modus" = "control" ]; then
-  echo -e "URL\t\t\t\t\t\tAnlagedatum\t\tKatalog\tDNB\tcontentType" >> $mailbodydatei
+  echo -e "URL\t\t\t\t\tAnlagedatum\t\tKatalog\tDNB\tcontentType" >> $mailbodydatei
 elif [ "$modus" = "register" ]; then
-  echo -e "URL\t\t\t\t\t\tAnlagedatum\t\tKatalog\tDNB\tcontentType\t\"addUrn\"-Response (abbrev. to max 80 chars)" >> $mailbodydatei
+  echo -e "URL\t\t\t\t\tAnlagedatum\t\tKatalog\tDNB\tcontentType\t\t\"addUrn\"-Response (abbrev. to max 80 chars)" >> $mailbodydatei
 elif [ "$modus" = "katalog" ]; then
-  echo -e "URL\t\t\t\t\t\tAnlagedatum\t\tKatalog\tcontentType\t\"update\"-Response (abbrev. to max 80 chars)" >> $mailbodydatei
+  echo -e "URL\t\t\t\t\tAnlagedatum\t\tKatalog\tcontentType\thbzId\t\t\"update\"-Response (abbrev. to max 80 chars)" >> $mailbodydatei
 fi
 if [ -s $outdatei ]; then
   # outdatei ist nicht leer
