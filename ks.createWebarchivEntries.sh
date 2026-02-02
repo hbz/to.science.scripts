@@ -127,25 +127,32 @@ while read zeile; do
 	## Mask spaces by <
 	zeile_maskiert=$(echo $zeile | tr " " "<")
 	arr=($(echo $zeile_maskiert | tr ";" "\n"))
-	# if [ "$lb" = "DUS" ]; then
 	#	# Düsseldorf lieferte Bibliothekskürzel und Site-Name getrennt in den ersten beiden Spalten
 	#	Titel=$(echo ${arr[0]} | tr "<" " ")": "$(echo ${arr[1]} | tr "<" " ")
 	#	URL=$(echo ${arr[3]} | tr "<" " ")
 	#	Intervall=$(echo ${arr[4]} | tr "<" " ")
-	#else
-		Titel=$(echo ${arr[0]} | tr "<" " ")
-		URL=$(echo ${arr[2]} | tr "<" " ")
-		Intervall=$(echo ${arr[3]} | tr "<" " ")
-	#fi
+        Titel=$(echo ${arr[0]} | tr "<" " ")
+        URL=$(echo ${arr[2]} | tr "<" " ")
+        Intervall=$(echo ${arr[3]} | tr "<" " ")
+        # subDomainKZ=$(echo ${arr[4]} | tr "<" " ")  # "X" falls mit Subdomains
+        if [ "$lb" = "BN" ]; then
+          crawlSubdomains=false
+        else
+          crawlSubdomains=true
+        fi
 	echo "Titel: $Titel"
 	echo "URL: $URL"
 	echo "Intervall: $Intervall"
+	# if [ -n "$subDomainKZ" ]; then
+	#	echo "subDomainKZ: $subDomainKZ"
+	# fi
+	echo "crawlSubdomains: $crawlSubdomains"
 	if [ -n "$pid" ]; then
 		echo "PID: $pid"
 	fi
 
 	# Jetzt eine Webpage anlegen
-	./createWebpage.sh $curlopts "$Titel" "$URL" "$Intervall" "$pid"
+	./createWebpage.sh $curlopts "$Titel" "$URL" "$Intervall" "$pid" "$crawlSubdomains"
 	if [ -n "$pid" ]; then
 		pid=$(($pid+1))
 	fi
