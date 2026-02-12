@@ -17,6 +17,7 @@
 # ! Autor           | Datum      | Grund                                      !
 # +---------------------------------------------------------------------------+
 # ! Ingolf Kuss     | 19.12.2019 | Neuanlage                                  !
+# ! Ingolf Kuss     | 12.02.2026 | Warc-Deduplication auch für den Precrawl   !
 # +---------------------------------------------------------------------------+
 
 # SITE=https://www.alumnat-sankt-michael-boppard.de/
@@ -61,32 +62,23 @@ cmd="$WPULL --warc-file $WARCNAME \
     --$WAITPARAM \
     --tries=5 \
     --waitretry=20 \
-    --random-wait \
     --strip-session-id \
     --user-agent=\"$USERAGENT\" \
     --header=\"$COOKIE\" \
+    --escaped-fragment \
+    --no-directories \
+    --no-host-directories \
+    --page-requisites \
+    --convert-links \
+    --no-strong-redirects \
     --warc-append \
     --database $WARCNAME-cdn.db \
     --input-file=cdn.txt \
     --warc-cdx"
-# if [ -n "$CDXFILE" ]; then
-#   cmd="$cmd \
-#     --warc-dedup $CDXFILE"
-# fi
+if [ -n "$CDXFILE" ]; then
+  cmd="$cmd \
+    --warc-dedup $CDXFILE"
+fi
+
 echo "executing CDN Precrawl command $cmd"
-#exec $cmd
-$WPULL --warc-file $WARCNAME \
-    --no-check-certificate \
-    --no-robots \
-    --delete-after \
-    --$WAITPARAM \
-    --tries=5 \
-    --waitretry=20 \
-    --random-wait \
-    --strip-session-id \
-    --user-agent="$USERAGENT" \
-    --header="$COOKIE" \
-    --warc-append \
-    --database $WARCNAME-cdn.db \
-    --input-file=cdn.txt \
-    --warc-cdx
+exec $cmd
