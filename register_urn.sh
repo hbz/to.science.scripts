@@ -145,7 +145,7 @@ fi
 vondatum_hr=`date -d @$vonsekunden +"%Y-%m-%d"`
 bisdatum_hr=`date -d @$bissekunden +"%Y-%m-%d"`
 echo "Objekte mit Anlagedatum von $vondatum_hr bis $bisdatum_hr:" >> $mailbodydatei
-resultset=`curl -s -XGET $ELASTICSEARCH/$project/journal,monograph,file,webpage,version/_search -d'{"query":{"range" : {"isDescribedBy.created":{"from":"'$vondatum_hr'","to":"'$bisdatum_hr'"}} },"fields":["isDescribedBy.created","publishScheme","hbzId"],"size":"50000"}'`
+resultset=`curl -s -XGET $ELASTICSEARCH/$project/journal,monograph,file,webpage,version/_search -d'{"query":{"range" : {"isDescribedBy.created":{"from":"'$vondatum_hr'","to":"'$bisdatum_hr'"}} },"fields":["isDescribedBy.created","publishScheme","hbzId","urn"],"size":"50000"}'`
 #echo "resultset="
 #echo $resultset | jq "."
 for hit in `echo $resultset | jq -c ".hits.hits[]"`
@@ -179,6 +179,12 @@ do
     hbzId=`echo $hit | jq -c ".fields[\"hbzId\"][]"`
     if [ -n "$hbzId" ]; then
       hbzId=$(stripOffQuotes $hbzId)
+    fi
+
+    unset urn;
+    urn=`echo $hit | jq -c ".fields[\"urn\"][]"`
+    if [ -n "$urn" ]; then
+      urn=$(stripOffQuotes $urn)
     fi
 
     if [ -z "$id" ]; then
@@ -237,12 +243,15 @@ do
     fi
     
     if [ "$modus" = "register" ] && [ "$dnb" = "N" ]; then
-      # Nachregistrierung des Objektes für URN-Vergabe
-      idnum=`echo $id | sed 's/^[^\:]*:\(.*\)$/\1/'`
-      addURN=`curl -s -XPOST -u$REGAL_ADMIN:$passwd "$regalApi/utils/addUrn?id=$idnum&namespace=$INDEXNAME&snid=$URNSNID"`
-      echo "$aktdate: $addURN\n"; # Ausgabe in log-Datei
-      addURNresponse=${addURN:0:80}
-      echo -e "$url\t$cdate\t$cat\t$dnb\t$contentType\t\t$addURNresponse" >> $outdatei
+      # Hat das Objekt eine URN in unserem URN-Namensraum ?
+      if [ -z "$urn" ] || [[ ! "$urn" =~ ^(.*)$URNSNID(.*)$ ]]; then
+        # Vergabe einer URN aus unserem Namensraum für dieses Objekt
+        idnum=`echo $id | sed 's/^[^\:]*:\(.*\)$/\1/'`
+        addURN=`curl -s -XPOST -u$REGAL_ADMIN:$passwd "$regalApi/utils/addUrn?id=$idnum&namespace=$INDEXNAME&snid=$URNSNID"`
+        echo "$aktdate: $addURN"; # Ausgabe in log-Datei
+        addURNresponse=${addURN:0:80}
+        echo -e "$url\t$cdate\t$cat\t$dnb\t$contentType\t\t$addURNresponse" >> $outdatei
+      fi
     fi
 
     if [ "$modus" = "control" ]; then
