@@ -7,6 +7,7 @@
 #+------------------------------+----------------------------------------------------------------------------------------
 #| Ingolf Kuss     | 21.01.2025 | Neuanlage
 #| Ingolf Kuss     | 10.02.2025 | Parameter PID (von - bis) hinzugefügt
+#| Ingolf Kuss     | 16.01.2026 | Parameter crawlSubdomains (true oder false) hinzugefügt
 #+------------------------------+----------------------------------------------------------------------------------------
 
 set -o nounset
@@ -50,6 +51,7 @@ title=$1
 url=$2
 intervall=$3
 pid=$4
+crawlSubdomains=$5
 
 
 # Beginn der Hauptverarbeitung
@@ -65,8 +67,8 @@ fi
 url_encoded=$(urlencode $url)
 title_encoded=$(urlencode "$title")
 intervall_encoded=$(urlencode "$intervall")
-echo "curl $curlopts -XPOST \"$BACKEND/resource/$NAMESPACE/createWebpage?url=$url_encoded&title=$title_encoded&interval=$intervall_encoded&pid=$pid\""
-resultat=`curl $curlopts -u$ADMIN_USER:$PASSWORD -H"content-type:application/json" -XPOST -d"{\"contentType\":\"webpage\"}" "$BACKEND/resource/$NAMESPACE/createWebpage?url=$url_encoded&title=$title_encoded&interval=$intervall_encoded&pid=$pid"`
+echo "curl $curlopts -XPOST \"$BACKEND/resource/$NAMESPACE/createWebpage?url=$url_encoded&title=$title_encoded&interval=$intervall_encoded&pid=$pid&crawlSubdomains=$crawlSubdomains\""
+resultat=`curl $curlopts -u$ADMIN_USER:$PASSWORD -H"content-type:application/json" -XPOST -d"{\"contentType\":\"webpage\"}" "$BACKEND/resource/$NAMESPACE/createWebpage?url=$url_encoded&title=$title_encoded&interval=$intervall_encoded&pid=$pid&crawlSubdomains=$crawlSubdomains"`
 echo $resultat
 id=`echo $resultat | jq ".[\"@id\"]"`
 id=$(stripOffQuotes "$id")

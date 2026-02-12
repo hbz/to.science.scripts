@@ -10,6 +10,7 @@
 # Ingolf Kuss  | 01.02.2021 | EDOZWO-1045 | Nur Crawls des laufenden Jahres auswerten, da der Report sonst zu lange läuft.
 #              |            |             | Aktuell läuft der Report 21 - 27 Stunden lang für eine Auswertung aller Crawls,
 #              |            |             | die jemals gelaufen sind. Das ist für einen täglichen Nachtlauf zu lange.
+# Ingolf Kuss  | 23.01.2026 | TOSDEV-32   | Ermittle das Kennzeichen "Data-Provider" aus dem Nummernkreis, Erfasser oder aus Letzter Bearbeiter
 
 scriptdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $scriptdir
@@ -20,6 +21,78 @@ function stripOffQuotes {
   local string=$1;
   local len=${#string};
   echo ${string:1:$len-2};
+}
+
+function ermittleKennzeichen {
+  local kennzeichen=""
+  # Ermittle das Kennzeichen "Data-Provider"
+  if [[ "$pid" =~ ^$NAMESPACE:([0-9]+)$ ]]; then
+    nummer=${BASH_REMATCH[1]}
+    # echo "nummer=$nummer"
+  fi
+  # Ermittle das Kennzeichen "Data-Provider" anhand des Nummernkreises
+  OLDIFS=$IFS
+  IFS=","
+  read -ra array <<< "$NUMMERNKREISE"
+  for NUMMERNKREIS in "${array[@]}"
+  do
+    KENNZEICH=`echo  $NUMMERNKREIS | sed 's/^\([^\:]*\):\([0-9]*\)-\([0-9]*\)$/\1/'`
+    NUMBER_LOW=`echo $NUMMERNKREIS  | sed 's/^\([^\:]*\):\([0-9]*\)-\([0-9]*\)$/\2/'`
+    NUMBER_HIGH=`echo $NUMMERNKREIS | sed 's/^\([^\:]*\):\([0-9]*\)-\([0-9]*\)$/\3/'`
+    if [ $nummer -ge $NUMBER_LOW ] && [ $nummer -lt $NUMBER_HIGH ]; then
+      kennzeichen=$KENNZEICH
+      break
+    fi
+  done
+  IFS=$OLDIFS
+  if [ "$kennzeichen" = "" ]; then
+    createdBy=`echo $httpResponse | jq '.isDescribedBy.createdBy'`
+    if [ $createdBy ] && [ "$createdBy" != "null" ]; then
+      # Ermittle das Kennzeichen anhand des Erfassers
+      createdBy=$(stripOffQuotes $createdBy)
+      # echo "createdBy=$createdBy"
+      kennzeichen=$(ermittleKennzeichenAnhandUserid $createdBy)
+    fi
+    if [ "$kennzeichen" = "" ]; then
+      lastModifiedBy=`echo $httpResponse | jq '.isDescribedBy.lastModifiedBy'`
+      if [ $lastModifiedBy ] && [ "$lastModifiedBy" != "null" ]; then
+        # Ermittle das Kennzeichen anhand des Letzten Bearbeiters
+        lastModifiedBy=$(stripOffQuotes $lastModifiedBy)
+        # echo "lastModifiedBy=$lastModifiedBy"
+        kennzeichen=$(ermittleKennzeichenAnhandUserid $lastModifiedBy)
+      fi
+    fi 
+  fi
+  echo $kennzeichen
+}
+
+function ermittleKennzeichenAnhandUserid {
+  local userId=$1
+  local kennzeichen=""
+  OLDIFS=$IFS
+  IFS="."
+  read -ra array <<< "$USERIDS"
+  for PROVIDER_USERS in "${array[@]}"
+  do
+    KENNZEICH=`echo $PROVIDER_USERS | sed 's/^\([^\:]*\):\(.*\)$/\1/'`
+    USERLISTE=`echo   $PROVIDER_USERS | sed 's/^\([^\:]*\):\(.*\)$/\2/'`
+    # Parse Userliste
+    IFS=","
+    read -ra array <<< "$USERLISTE"
+    for USERID in "${array[@]}"
+    do
+      if [ "$USERID" = "$userId" ]; then
+        kennzeichen=$KENNZEICH
+        break
+      fi
+    done
+    IFS="."
+    if [ "$kennzeichen" != "" ]; then
+      break
+    fi
+  done
+  IFS=$OLDIFS
+  echo $kennzeichen;
 }
 
 reportDir=/opt/toscience/crawlreports
@@ -85,48 +158,8 @@ for pid in `ls -dv $NAMESPACE:*`; do
       title=$(stripOffQuotes $title)
     fi
     if [ -n "$KENNZEICHEN" ]; then
-      # Ermittle das Landesbibliothekskennzeichen
-      # Ermittle das LB-Kennzeichen anhand des Nummernkreises
-      if [[ "$pid" =~ ^$NAMESPACE:([0-9]+)$ ]]; then
-        nummer=${BASH_REMATCH[1]}
-        echo "nummer=$nummer"
-      fi
-      if [ $nummer -ge 10000 ] && [ $nummer -lt 20000 ]; then
-        kennzeichen=""
-      elif [ $nummer -ge 20000 ] && [ $nummer -lt 30000 ]; then
-        kennzeichen=""
-      elif [ $nummer -ge 30000 ] && [ $nummer -lt 40000 ]; then
-        kennzeichen=""
-      else
-        # Ermittle das LB-Kennzeichen anhand des Erfassers oder des Letzten Bearbeiters
-        createdBy=`echo $httpResponse | jq '.isDescribedBy.createdBy'`
-        if [ $createdBy ] && [ "$createdBy" != "null" ]; then
-          createdBy=$(stripOffQuotes $createdBy)
-          echo "createdBy=$createdBy"
-        fi
-        if [ "$createdBy" = "" ] || [ "$createdBy" = "" ]; then
-          kennzeichen=""
-        elif [ "$createdBy" = "" ] || [ "$createdBy" = "" ] || [ "$createdBy" = "" ]; then
-          kennzeichen=""
-        elif [ "$createdBy" = "" ] || [ "$createdBy" = "" ] || [ "$createdBy" = "" ]; then
-          kennzeichen=""
-        fi
-        if [ "$kennzeichen" = "" ]; then
-          # Ermittle das LB-Kennzeichen anhand des Letzten Bearbeiters
-          lastModifiedBy=`echo $httpResponse | jq '.isDescribedBy.lastModifiedBy'`
-          if [ $lastModifiedBy ] && [ "$lastModifiedBy" != "null" ]; then
-            lastModifiedBy=$(stripOffQuotes $lastModifiedBy)
-            echo "lastModifiedBy=$lastModifiedBy"
-          fi
-          if [ "$lastModifiedBy" = "" ] || [ "$lastModifiedBy" = "" ]; then
-            kennzeichen=""
-          elif [ "$lastModifiedBy" = "" ] || [ "$lastModifiedBy" = "" ] || [ "$lastModifiedBy" = "" ]; then
-            kennzeichen=""
-          elif [ "$lastModifiedBy" = "" ] || [ "$lastModifiedBy" = "" ] || [ "$lastModifiedBy" = "" ]; then
-            kennzeichen=""
-          fi
-        fi 
-      fi
+      # Ermittle das Kennzeichen "Data-Provider"
+      kennzeichen=$(ermittleKennzeichen)
     fi
   fi
   echo "hbzid=$hbzid"
@@ -287,48 +320,8 @@ for pid in `ls -dv $NAMESPACE:*`; do
       title=$(stripOffQuotes $title)
     fi
     if [ -n "$KENNZEICHEN" ]; then
-      # Ermittle das Landesbibliothekskennzeichen
-      # Ermittle das LB-Kennzeichen anhand des Nummernkreises
-      if [[ "$pid" =~ ^$NAMESPACE:([0-9]+)$ ]]; then
-        nummer=${BASH_REMATCH[1]}
-	echo "nummer=$nummer"
-      fi
-      if [ $nummer -ge 10000 ] && [ $nummer -lt 20000 ]; then
-        kennzeichen=""
-      elif [ $nummer -ge 20000 ] && [ $nummer -lt 30000 ]; then
-        kennzeichen=""
-      elif [ $nummer -ge 30000 ] && [ $nummer -lt 40000 ]; then
-        kennzeichen=""
-      else
-        # Ermittle das LB-Kennzeichen anhand des Erfassers oder des Letzen Bearbeiters
-        createdBy=`echo $httpResponse | jq '.isDescribedBy.createdBy'`
-        if [ $createdBy ] && [ "$createdBy" != "null" ]; then
-          createdBy=$(stripOffQuotes $createdBy)
-          echo "createdBy=$createdBy"
-        fi
-        if [ "$createdBy" = "" ] || [ "$createdBy" = "" ]; then
-          kennzeichen=""
-        elif [ "$createdBy" = "" ] || [ "$createdBy" = "" ] || [ "$createdBy" = "" ]; then
-          kennzeichen=""
-        elif [ "$createdBy" = "" ] || [ "$createdBy" = "" ] || [ "$createdBy" = "" ]; then
-          kennzeichen=""
-        fi
-        if [ "$kennzeichen" = "" ]; then
-          # Ermittle das LB-Kennzeichen anhand des Letzten Bearbeiters
-          lastModifiedBy=`echo $httpResponse | jq '.isDescribedBy.lastModifiedBy'`
-          if [ $lastModifiedBy ] && [ "$lastModifiedBy" != "null" ]; then
-            lastModifiedBy=$(stripOffQuotes $lastModifiedBy)
-            echo "lastModifiedBy=$lastModifiedBy"
-          fi
-          if [ "$lastModifiedBy" = "" ] || [ "$lastModifiedBy" = "" ]; then
-            kennzeichen=""
-          elif [ "$lastModifiedBy" = "" ] || [ "$lastModifiedBy" = "" ] || [ "$lastModifiedBy" = "" ]; then
-            kennzeichen=""
-          elif [ "$lastModifiedBy" = "" ] || [ "$lastModifiedBy" = "" ] || [ "$lastModifiedBy" = "" ]; then
-            kennzeichen=""
-          fi
-        fi 
-      fi
+      # Ermittle das Kennzeichen "Data-Provider"
+      kennzeichen=$(ermittleKennzeichen)
     fi
   fi
   echo "hbzid=$hbzid"
