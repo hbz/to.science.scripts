@@ -65,11 +65,8 @@ cmd="$WPULL --warc-file $WARCNAME \
     --strip-session-id \
     --user-agent=\"$USERAGENT\" \
     --header=\"$COOKIE\" \
-    --escaped-fragment \
     --no-directories \
     --no-host-directories \
-    --page-requisites \
-    --convert-links \
     --no-strong-redirects \
     --warc-append \
     --database $WARCNAME-cdn.db \
@@ -81,4 +78,42 @@ if [ -n "$CDXFILE" ]; then
 fi
 
 echo "executing CDN Precrawl command $cmd"
-exec $cmd
+#exec $cmd
+if [ -z "$CDXFILE" ]; then
+  $WPULL --warc-file $WARCNAME \
+    --no-check-certificate \
+    --no-robots \
+    --delete-after \
+    --$WAITPARAM \
+    --tries=5 \
+    --waitretry=20 \
+    --strip-session-id \
+    --user-agent="$USERAGENT" \
+    --header="$COOKIE" \
+    --no-directories \
+    --no-host-directories \
+    --no-strong-redirects \
+    --warc-append \
+    --database $WARCNAME-cdn.db \
+    --input-file=cdn.txt \
+    --warc-cdx
+else
+  $WPULL --warc-file $WARCNAME \
+    --no-check-certificate \
+    --no-robots \
+    --delete-after \
+    --$WAITPARAM \
+    --tries=5 \
+    --waitretry=20 \
+    --strip-session-id \
+    --user-agent="$USERAGENT" \
+    --header="$COOKIE" \
+    --no-directories \
+    --no-host-directories \
+    --no-strong-redirects \
+    --warc-append \
+    --database $WARCNAME-cdn.db \
+    --input-file=cdn.txt \
+    --warc-cdx \
+    --warc-dedup $CDXFILE
+fi
