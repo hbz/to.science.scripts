@@ -12,13 +12,13 @@ function init(){
 
 function backup(){
     SNAPSHOT=`date +%Y%m%d-%H%M%S`
-    mysqldump -u root -p$MYSQL_PASSWORD --events --all-databases > $REGAL_BACKUP/mysql/$SNAPSHOT.sql
+	mariadb-dump -u root -p$MYSQL_PASSWORD --events --all-databases | gzip > $REGAL_BACKUP/mysql/$SNAPSHOT.sql.gz
 }
 
 function clean(){
     echo "Clean"
     # The amount of snapshots we want to keep.
-    LIMIT=30
+    LIMIT=10
 
     # Get a list of snapshots that we want to delete
     len=`ls -tr $REGAL_BACKUP/mysql/|wc -l`
