@@ -15,6 +15,7 @@ TOKEN=$(stripOffQuotes $TOKEN)
 # Get Crawl Out
 # holt einen bestimmten Crawl
 # für Verbandsgemeinde Herrstein
-CRAWL_ID="manual-20260421165905-ab0d70dd-922"
-#curl -XGET -H "Authorization: Bearer $TOKEN" -H "Accept: application/json" "http://$BTRIX_API_URL/orgs/$BTRIX_ORGID/crawls/$CRAWL_ID/replay.json"
+#CRAWL_ID="manual-20260421165905-ab0d70dd-922"
+CRAWL_ID=$1
+curl -XGET -H "Authorization: Bearer $TOKEN" -H "Accept: application/json" "http://$BTRIX_API_URL/orgs/$BTRIX_ORGID/crawls/$CRAWL_ID/replay.json"
 
