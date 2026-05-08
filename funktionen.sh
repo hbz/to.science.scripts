@@ -78,6 +78,68 @@ appendFileToParent() {
   echo "$tosIdFile eingehängt in Parent Objekt $tosIdParent"
 }
 
-func2() {
-  echo "Starting func2"
-  }
+function seconds2HoursMinSec {
+  # Diese Funktion konvertiert eine Integer-Angabe für Sekunden in eine Zeichenkette der Form %d h %d m %d s.
+  # Quelle: https://blog.jkip.de/in-bash-sekunden-umrechnen-in-stunden-minuten-und-sekunden/
+  local seconds=$1;
+  local hours=$(( seconds / 3600 ))
+  local minutes=$(( (seconds % 3600) / 60 ))
+  seconds=$(( seconds % 60 ))
+  if [[ $hours -gt 0 ]]; then printf "%dh " $hours; fi
+  if [[ $minutes -gt 0 ]]; then printf "%dm " $minutes; fi
+  if [[ $seconds -gt 0 ]]; then printf "%ds" $seconds; fi
+}
+
+function bytes2GibMibKib {
+  # Diese Funktion konvertiert eine Integer-Angabe für Bytes in eine Zeichenkette der Form %d,%1d GiB (MiB oder KiB).
+  # Also auf die führende Mengenangabe mit einer Stelle hinter dem Komma.
+  local bytes=$1;
+  local kib=$(( bytes / 1024 ))
+  local mib=$(( kib / 1024 ))
+  local gib=$(( mib / 1024 ))
+  bytes=$(( bytes % 1024 ))
+  kib=$(( kib % 1024 ))
+  mib=$(( mib % 1024 ))
+  if [[ $gib -gt 0 ]]; then printf "%d,%1d GiB" $gib $(( ( $mib * 100 / 1024 + 5 ) / 10 )); return; fi
+  if [[ $mib -gt 0 ]]; then printf "%d,%1d MiB" $mib $(( ( $kib * 100 / 1024 + 5 ) / 10 )); return; fi
+  if [[ $kib -gt 0 ]]; then printf "%d,%1d KiB" $kib $(( ( $bytes * 100 / 1024 + 5 ) / 10 )); return; fi
+  printf "%d Bytes" $bytes;
+}
+
+function formatDiscUsage {
+  # Diese Funktion gibt die Angabe zur Speicherbelegung in menschenlesbarer Form aus.
+  # Ähnlich wie bytes2GibMibKib, jeodch werden Speicherplatzangaben üblicherweise in Kilobyte angegeben, nicht in Bytes.
+  # Führende Mengenangabe mit einer Stelle hinter dem Komma.
+  local kilobyte=$1;
+  local mib=$(( kilobyte / 1024 ))
+  local gib=$(( mib / 1024 ))
+  local tib=$(( gib / 1024 ))
+  kilobyte=$(( kilobyte % 1024 ))
+  mib=$(( mib % 1024 ))
+  gib=$(( gib % 1024 ))
+  if [[ $tib -gt 0 ]]; then printf "%d,%1d TiB" $tib $(( ( $gib * 100 / 1024 + 5 ) / 10 )); return; fi
+  if [[ $gib -gt 0 ]]; then printf "%d,%1d GiB" $gib $(( ( $mib * 100 / 1024 + 5 ) / 10 )); return; fi
+  if [[ $mib -gt 0 ]]; then printf "%d,%1d MiB" $mib $(( ( $kilobyte * 100 / 1024 + 5 ) / 10 )); return; fi
+  printf "%d KiB" $kilobyte;
+}
+
+function calcDownloadSpeed {
+  # Diese Funktion berechnet die Download-Geschwindigkeit und gibt sie als menschenlesbare Zeichenkette aus.
+  local bytes=$1;
+  local seconds=$2;
+  local speed=`echo "scale=1; ( $bytes * 10 / $seconds + 0.5 ) / 10" | bc`
+  local unit="B/s"
+  if (( $(echo "$speed > 1024" | bc -l) )); then
+    speed=`echo "scale=1; ( $speed * 10 / 1024 + 0.5 ) / 10" | bc`
+    unit="KiB/s"
+  fi
+  if (( $(echo "$speed > 1024" | bc -l) )); then
+    speed=`echo "scale=1; ( $speed * 10 / 1024 + 0.5 ) / 10" | bc`
+    unit="MiB/s"
+  fi
+  if (( $(echo "$speed > 1024" | bc -l) )); then
+    speed=`echo "scale=1; ( $speed * 10 / 1024 + 0.5 ) / 10" | bc`
+    unit="GiB/s"
+  fi
+  echo "$speed $unit";
+}
