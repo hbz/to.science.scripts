@@ -13,7 +13,11 @@
 # Ingolf Kuss  | 23.01.2026 | TOSDEV-32   | Ermittle das Kennzeichen "Data-Provider" aus dem Nummernkreis, Erfasser oder aus Letzter Bearbeiter
 # Ingolf Kuss  | 04.05.2026 | TOSDEV-23   | Vereinheitlichung für Heritrix-, wpull- und Browsertrix-Crawls
 
+source funktionen.sh
 source btrix_functions.sh
+scriptdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $scriptdir
+source variables.conf
 
 #[ bash-Funktionen
 function stripOffQuotes {
