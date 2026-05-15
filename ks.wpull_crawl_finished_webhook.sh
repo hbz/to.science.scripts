@@ -9,13 +9,13 @@ source variables.conf
 
 WPULL_DATA_FINISHED=$ARCHIVE_HOME/wpull-data-finished
 cd $WPULL_DATA_FINISHED
-echo "`date` BEGINN Verarbeitung fertiggestellte wpull-Archivdateien im Verzeichnis $WPULL_DATA_FINISHED."
+#echo "`date` BEGINN Verarbeitung fertiggestellte wpull-Archivdateien im Verzeichnis $WPULL_DATA_FINISHED."
 anz_verarbeitet=0
 # Schleifen über pid-Dir und crawldir.
 # wpull verschiebt eine WARC-Datei und eine CDX-Datei in das "finished"-Verzeichnis. Verarbeite diese weiter im Webhook (Aufruf des Webhook).
 for pid in $NAMESPACE:[0-9]*; do
   if [ ! -d "$pid" ]; then continue; fi
-  echo "pid=$pid"
+  echo "`date` Verarbeite wpull-finished Verzeichnis pid=$pid"
   cd $pid
   for crawldir in [0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*; do
     if [ ! -d "$crawldir" ]; then
@@ -41,6 +41,6 @@ for pid in $NAMESPACE:[0-9]*; do
   done
   cd $WPULL_DATA_FINISHED
 done
-echo "$anz_verarbeitet wpull-Archivdateien wurden verarbeitet."
-echo "`date` ENDE Verarbeitung wpull-Archivdateien."
+# echo "$anz_verarbeitet wpull-Archivdateien wurden verarbeitet."
+# echo "`date` ENDE Verarbeitung wpull-Archivdateien."
 cd $scriptdir
