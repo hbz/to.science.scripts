@@ -55,7 +55,7 @@ fi
 
 sleep 5
 
-cmd="$WPULL --warc-file $WARCNAME \
+cmd="$WPULL --warc-file $WARCNAME-cdn \
     --no-check-certificate \
     --no-robots \
     --delete-after \
@@ -80,7 +80,7 @@ fi
 echo "executing CDN Precrawl command $cmd"
 #exec $cmd
 if [ -z "$CDXFILE" ]; then
-  $WPULL --warc-file $WARCNAME \
+  $WPULL --warc-file $WARCNAME-cdn \
     --no-check-certificate \
     --no-robots \
     --delete-after \
@@ -98,7 +98,7 @@ if [ -z "$CDXFILE" ]; then
     --input-file=cdn.txt \
     --warc-cdx
 else
-  $WPULL --warc-file $WARCNAME \
+  $WPULL --warc-file $WARCNAME-cdn \
     --no-check-certificate \
     --no-robots \
     --delete-after \
