@@ -1,9 +1,18 @@
 #!/bin/bash
+# Title: oaipoll
+# Description: toggles the pollingEnabled value in order to turn on and off
+#   the OAI polling. Should be used with cron or timer to enable polling only over night
+# Author: Peter Reimer <reimer@hbz-nrw.de
+# Date: 2026-05-07
+
+MYSQL=/usr/bin/mariadb
+# wait some time after turning off oai-pmh before disabling the polling
+WAIT=120
 
 usage()
 {
     echo "This script enables and disables the oai-pmh polling by toggling the flag in the database."
-    echo "Usage: $0 {enable|disable|status}"
+    echo "Usage: $0 {enable|disable|status|log}"
     exit 1
 }
 scriptdir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -14,20 +23,26 @@ case "$1" in
 
 enable)
     echo "set to 1"
-    mysql -uoaipmh -p$OAIPMH_PASSWORD -e"UPDATE oaipmh.rcAdmin SET pollingEnabled=1;"
+    $MYSQL -uoaipmh -p$OAIPMH_PASSWORD -e"UPDATE oaipmh.rcAdmin SET pollingEnabled=1;"
     ;;
 
 disable)
-    echo "set to 0"
-    mysql -uoaipmh -p$OAIPMH_PASSWORD -e"UPDATE oaipmh.rcAdmin SET pollingEnabled=0;"
+    echo "turning off oai-pmh service"
+    curl -u admin:$REGAL_PASSWORD "http://localhost:8080/manager/html/stop?path=/oai%2Dpmh" -o /dev/null
+    echo "waiting $WAIT seconds"
+    sleep $WAIT
+    echo "setting pollingEnabled to 0"
+    $MYSQL -uoaipmh -p$OAIPMH_PASSWORD -e"UPDATE oaipmh.rcAdmin SET pollingEnabled=0;"
+    echo "Resuming oai-pmh service" 
+    curl -u admin:$REGAL_PASSWORD "http://localhost:8080/manager/html/start?path=/oai%2Dpmh" -o /dev/null
     ;;
 
 status)
-    mysql -uoaipmh -p$OAIPMH_PASSWORD -e"select pollingEnabled from oaipmh.rcAdmin;" | sed '2!d'
+    $MYSQL -uoaipmh -p$OAIPMH_PASSWORD -e"select pollingEnabled from oaipmh.rcAdmin;" | sed '2!d'
     ;;
 
 log)
-    state=`mysql -uoaipmh -p$OAIPMH_PASSWORD -e"select pollingEnabled from oaipmh.rcAdmin;" | sed '2!d'`
+    state=`$MYSQL -uoaipmh -p$OAIPMH_PASSWORD -e"select pollingEnabled from oaipmh.rcAdmin;" | sed '2!d'`
     timestamp=`date "+%Y-%m-%dT%H:%M:%S"`
     echo $timestamp $state
     ;;
