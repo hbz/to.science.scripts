@@ -12,9 +12,7 @@ TOKEN=`echo $httpResponse | jq '.access_token'`
 TOKEN=$(stripOffQuotes $TOKEN)
 #echo "TOKEN=$TOKEN"
 
+# Get Crawl Id from command line
+cid=$1
 # Get Crawl Config Out
-# Bergischer Verein für Familienkunde
-cid=151175e6-d3d2-48a3-80a3-d39428804c45
-# SPD Gütersloh
-cid=a02b273c-e9f4-42bb-a51a-5cec80c4eed4
 curl -XGET -H "Authorization: Bearer $TOKEN" -H "Accept: application/json" "http://$BTRIX_API_URL/orgs/$BTRIX_ORGID/crawlconfigs/$cid"

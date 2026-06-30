@@ -25,3 +25,6 @@ scripts/variables.conf
 *~
 variables.conf
 *.HIST
+*.csv
+*.csv.out
+ks.postVersion.sh
