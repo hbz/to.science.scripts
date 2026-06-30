@@ -15,22 +15,25 @@ anz_verarbeitet=0
 # wpull verschiebt eine WARC-Datei und eine CDX-Datei in das "finished"-Verzeichnis. Verarbeite diese weiter im Webhook (Aufruf des Webhook).
 for pid in $NAMESPACE:[0-9]*; do
   if [ ! -d "$pid" ]; then continue; fi
-  echo "`date` Verarbeite wpull-finished Verzeichnis pid=$pid"
+  # echo "`date` Verarbeite wpull-finished Verzeichnis pid=$pid"
   cd $pid
   for crawldir in [0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*; do
     if [ ! -d "$crawldir" ]; then
+      echo "`date` Verarbeite wpull-finished Verzeichnis pid=$pid"
       echo "kein Crawldir gefunden ($crawldir)!"
       echo "Leeres PID-Verzeichnis $pid wird gelöscht."
       cd $WPULL_DATA_FINISHED
       rmdir $pid 
       break
     fi
-    echo "crawldir=$crawldir"
+    # echo "crawldir=$crawldir"
     for archive in $crawldir/*.warc.gz; do
       if [ ! -f "$archive" ]; then
-        echo "keine Archivdatei gefunden ($archive)! Läuft der Crawl noch ?"
+        # echo "keine Archivdatei gefunden ($archive)! Läuft der Crawl noch ?"
         continue
       fi
+      echo "`date` Verarbeite wpull-finished Verzeichnis pid=$pid"
+      echo "crawldir=$crawldir"
       warcFilename=`basename $archive`
       echo "Verarbeite wpull-Archivdatei $warcFilename"
       warcFilenameBase=`echo $warcFilename | sed 's/\.warc\.gz$//'`
