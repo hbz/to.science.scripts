@@ -27,4 +27,3 @@ variables.conf
 *.HIST
 *.csv
 *.csv.out
-ks.postVersion.sh
