@@ -143,3 +143,64 @@ function calcDownloadSpeed {
   fi
   echo "$speed $unit";
 }
+
+function warcio_chk_recompress {
+  # Diese Funktion rekomprimiert eine gezippte WARC-Datei, falls notwendig.
+  # Das ist für einige vom LAV gelieferte Archive leider notwendig.
+  # Sonst kann von "wb-manager add" folgende Fehlermeldung kommen:
+  # "ERROR: non-chunked gzip file detected, gzip block continues
+  #    beyond single record.
+  #
+  #    This file is probably not a multi-member gzip but a single gzip file.
+  #
+  #    To allow seek, a gzipped WARC must have each record compressed into
+  #    a single gzip member and concatenated together.
+  #
+  #    This file is likely still valid and can be fixed by running:
+  #
+  #    warcio recompress <path/to/file> <path/to/new_file>"
+  #
+  # Autor: Ingolf Kuss, Anlagedatum: 10.07.2026 für LAV-Importe (TOS-1372, TOS-1369)
+  # Beispielaufruf: warcio_chk_recompress /sftp/lav/cvua-westfalen-de $archivdatei[.warc.gz] 
+
+  local lieferverzeichnis=$1
+  local archivdatei=$2
+  local olddir=$PWD
+  cd $lieferverzeichnis
+  if ! $PYTHON_HOME/bin/warcio check $archivdatei >> /dev/null; then
+    printf "INFO: Rekomprimiere Archivdatei $archivdatei.\n"
+    $PYTHON_HOME/bin/warcio recompress $archivdatei "recompressed-$archivdatei"
+    mv "recompressed-$archivdatei" $archivdatei 
+  fi
+  cd $olddir
+}
+
+function ermittleErsteUserIdVonKennzeichen {
+  local kennzeichen=$1
+  local userId=""
+  OLDIFS=$IFS
+  IFS="."
+  read -ra array <<< "$USERIDS"
+  for PROVIDER_USERS in "${array[@]}"
+  do
+    KENNZEICH=`echo $PROVIDER_USERS | sed 's/^\([^\:]*\):\(.*\)$/\1/'`
+    USERLISTE=`echo   $PROVIDER_USERS | sed 's/^\([^\:]*\):\(.*\)$/\2/'`
+    if [ "$KENNZEICH" != "$kennzeichen" ]; then
+      continue
+    fi
+    # Parse Userliste
+    IFS=","
+    read -ra array <<< "$USERLISTE"
+    for USERID in "${array[@]}"
+    do
+      userId=$USERID
+      break
+    done
+    if [ "$userId" != "" ]; then
+      break
+    fi
+    IFS="."
+  done
+  IFS=$OLDIFS
+  echo $userId;
+}

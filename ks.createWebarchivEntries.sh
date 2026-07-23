@@ -44,6 +44,7 @@ beginnPid=""
 von=4
 csv_datei="/opt/toscience/src/ULB_BN_Website-Archivierung_800_20241212.CSV"
 lb="BN"
+createdBy="ulbb"
 silent_off=0
 bis=6
 verbose=0
@@ -87,7 +88,20 @@ fi
 if [ $verbose == 1 ]; then
   curlopts="$curlopts -v"
 fi
-
+case $lb in
+  "BN")
+    $createdBy="ulbb"
+    ;;
+  "DUS")
+    $createdBy="ulbd"
+    ;;
+  "MS")
+    $createdBy="ulbms"
+    ;;
+  *)
+    $createdBy="admin"
+    ;;
+esac
 
 echo "BACKEND=$BACKEND"
 echo "Lege Webpages an anhand von Datei: $csv_datei"
@@ -152,7 +166,7 @@ while read zeile; do
 	fi
 
 	# Jetzt eine Webpage anlegen
-	./createWebpage.sh $curlopts "$Titel" "$URL" "$Intervall" "$pid" "$crawlSubdomains"
+	./createWebpage.sh $curlopts "$Titel" "$URL" "$createdBy" "$Intervall" "$pid" "$crawlSubdomains"
 	if [ -n "$pid" ]; then
 		pid=$(($pid+1))
 	fi
