@@ -57,6 +57,7 @@ shift $((OPTIND-1))
 # timestamp="20250904115137"
 # filename="warcs/WEB-20250904115143635-00000-2159~localhost~8443.warc.gz"
 # curl -XPOST -u$ADMIN_USER:$ADMIN_PASSWORD "$BACKEND/resource/$pid/postVersion?versionPid=$versionPid&dataDir=$dataDir&timestamp=$timestamp&filename=$filename" -H "UserId=gatherposter" -H "Content-Type: text/plain; charset=utf-8";
+# Bemerkung: der bisherige POST müsste noch funktionieren wenn man anstelle dataDir "crawlerSelection" übergibt, also z.B. "&crawlerSelection=lav" oder "&crawlerSelection=wpull".
 
 # Neu seit 21.07.2026 (für LAV-Ingests; unterstützt Collections)
 curl -XPOST -u$REGAL_ADMIN:$REGAL_PASSWORD -H "Content-Type: application/json; charset=utf-8; Accept: application/json" -d "{\"pid\":\"$pid\",\"collection\":\"$collection\",\"crawldir\":\"$crawldir\",\"warcFilenameBase\":\"$warcFilenameBase\"}" "$BACKEND/webhooks/externalCrawlIngest"
