@@ -1,12 +1,14 @@
 #!/bin/bash
 # Title: oaipoll
-# Description: toggles the pollingEnabled value in order to turn on and off
-#   the OAI polling. Should be used with cron or timer to enable polling only over night
+# Description: toggles the pollingEnabled value in the oaipmh databse in order to turn on and off
+#   the OAI polling. This is to reduce the stress on fedora during daytime/working hours. Should 
+#   be used with cron or timer to enable polling only over night
 # Author: Peter Reimer <reimer@hbz-nrw.de
 # Date: 2026-05-07
 
 MYSQL=/usr/bin/mariadb
-# wait some time after turning off oai-pmh before disabling the polling
+# the oaipmh service has to be off, when toggling the value. when the db is too busy, we get
+# timeout/locking problems. Wait some time after turning off oai-pmh before disabling the polling
 WAIT=120
 
 usage()
